@@ -39,19 +39,39 @@
   scene.add(dirLight);
 
 
+  var free = false; // default to auto camera
+
   var r = 15;
   var alpha = 0;
   var astep = 2 * Math.PI/180; // 2 degrees in rads
   camera.position.set(n/2, n/2, n/2+r);
 
+  var guiParams =
+  {
+    freeCam: false
+  };
+
+  var gui = new DAT.GUI();
+  var freeCam = gui.add(guiParams, "freeCam").name("Free camera?").listen();
+  freeCam.onChange(function(value) {
+    free = value;
+    if (free)
+    {
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+    }
+  });
+
   var render = function () {
     requestAnimationFrame(render);
 
-    // rotate the camera around in a circle
-    alpha = (alpha+astep) % (2*Math.PI);
-    camera.position.x = r * Math.sin(alpha) + n/2;
-    camera.position.z = r * Math.cos(alpha) + n/2;
-    camera.lookAt(new THREE.Vector3 (n/2, n/2, n/2)); // the centre
+    if (! free)
+    {
+      // rotate the camera around in a circle
+      alpha = (alpha+astep) % (2*Math.PI);
+      camera.position.x = r * Math.sin(alpha) + n/2;
+      camera.position.z = r * Math.cos(alpha) + n/2;
+      camera.lookAt(new THREE.Vector3 (n/2, n/2, n/2)); // the centre
+    }
 
     renderer.render(scene, camera);
   };
