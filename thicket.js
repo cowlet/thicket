@@ -39,7 +39,7 @@
   scene.add(dirLight);
 
 
-  var free = false; // default to auto camera
+  //var free = false; // default to auto camera
 
   var r = 15;
   var alpha = 0;
@@ -48,23 +48,32 @@
 
   var guiParams =
   {
-    freeCam: false
+    freeCam: false // default to auto camera
   };
 
   var gui = new DAT.GUI();
   var freeCam = gui.add(guiParams, "freeCam").name("Free camera?").listen();
   freeCam.onChange(function(value) {
-    free = value;
-    if (free)
+    guiParams.freeCam = value;
+    if (guiParams.freeCam)
     {
       controls = new THREE.OrbitControls(camera, renderer.domElement);
+    }
+    else
+    {
+      // from current position, work out r
+      var curx = camera.position.x - n/2;
+      var curz = camera.position.z - n/2;
+
+      r = Math.sqrt(curx*curx + curz*curz);
+      console.log("New r is " + r + " based on x " + camera.position.x + ", z " + camera.position.z);
     }
   });
 
   var render = function () {
     requestAnimationFrame(render);
 
-    if (! free)
+    if (! guiParams.freeCam)
     {
       // rotate the camera around in a circle
       alpha = (alpha+astep) % (2*Math.PI);
