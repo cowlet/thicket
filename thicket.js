@@ -9,19 +9,24 @@
 
   var geometry = new THREE.CubeGeometry(1,1,1);
   //var material = new THREE.MeshLambertMaterial({color: 0x00ff00});
-  var material = new THREE.MeshLambertMaterial({color: 0x00ff00, transparent: true, opacity: 0.1});
+  var healthy = new THREE.MeshLambertMaterial({color: 0x00ff00, transparent: true, opacity: 0.1});
+  var damaged = new THREE.MeshLambertMaterial({color: 0xff0000, transparent: true, opacity: 0.5});
 
   var n = 10;
+  var cubes = new Array();
 
   for (i = 0; i < n; ++i)
   {
+    cubes[i] = new Array();
     for (j = 0; j < n; ++j)
     {
+      cubes[i][j] = new Array();
       for (k = 0; k < n; ++k)
       {
-        var cube = new THREE.Mesh(geometry, material);
+        var cube = new THREE.Mesh(geometry, healthy);
         cube.position.set(i, j, k);
         scene.add(cube);
+        cubes[i][j][k] = cube;
       }
     }
   }
@@ -45,6 +50,7 @@
     camRad: 15,
     alpha: 0, // initial angle of camera
     astep: 2, // angle step in degrees
+    change: function () { cubes[5][5][5].material = damaged; },
   };
   camera.position.set(n/2, n/2, n/2+params.camRad);
 
@@ -57,7 +63,7 @@
     }
     else
     {
-      // from current position, work out r
+      // from current position, work out new radius
       var curx = camera.position.x - n/2;
       var curz = camera.position.z - n/2;
 
@@ -67,6 +73,9 @@
   });
 
   var alphaStep = gui.add(params, "astep").name("Speed of rotation").min(1).max(20);
+
+  var changeCol = gui.add(params, "change").name("Change a cube colour");
+
 
   var render = function () {
     requestAnimationFrame(render);
