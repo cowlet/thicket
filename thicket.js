@@ -50,7 +50,7 @@
   };
   camera.position.set(n/2, n/2, n/2+params.camRad);
 
-  var gui = new DAT.GUI();
+  var gui = new dat.gui.GUI();
   var freeCam = gui.add(params, "freeCam").name("Free camera?").listen();
   freeCam.onChange(function(value) {
     if (params.freeCam)

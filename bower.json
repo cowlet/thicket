@@ -1,0 +1,23 @@
+{
+  "name": "thicket",
+  "main": "thicket.js",
+  "version": "0.0.1",
+  "authors": [
+    "Victoria Catterson <vic@cowlet.org>"
+  ],
+  "description": "Electrical tree simulation",
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "threejs": "*",
+    "dat.gui": "*",
+    "threejs-controls": "*"
+  }
+}
