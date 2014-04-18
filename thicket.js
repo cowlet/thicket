@@ -7,10 +7,9 @@
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  var geometry = new THREE.CubeGeometry(1,1,1);
-  //var material = new THREE.MeshLambertMaterial({color: 0x00ff00});
+  var geometry = new THREE.CubeGeometry(1, 1, 1);
   var healthy = new THREE.MeshLambertMaterial({color: 0x00ff00, transparent: true, opacity: 0.1});
-  var damaged = new THREE.MeshLambertMaterial({color: 0xff0000, transparent: true, opacity: 0.5});
+  var damaged = new THREE.MeshLambertMaterial({color: 0xff0000, transparent: true, opacity: 0.9});
 
   var n = 10;
   var cubes = new Array();
@@ -31,16 +30,13 @@
     }
   }
 
-/*  var pointLight = new THREE.PointLight(0xffffff);
-  pointLight.position.set(10, 10, 10);
-  scene.add(pointLight);
-*/
+
   var ambLight = new THREE.AmbientLight(0x404040);
   ambLight.position.set(-5, 5, 0);
   scene.add(ambLight);
 
   var dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
-  dirLight.position.set(1, 0, 1); // from the front right
+  dirLight.position.set(1, 1, 1); // from the front top right
   scene.add(dirLight);
 
 
