@@ -39,23 +39,19 @@
   scene.add(dirLight);
 
 
-  //var free = false; // default to auto camera
-
-  var r = 15;
-  var alpha = 0;
-  var astep = 2 * Math.PI/180; // 2 degrees in rads
-  camera.position.set(n/2, n/2, n/2+r);
-
-  var guiParams =
+  var params =
   {
-    freeCam: false // default to auto camera
+    freeCam: false, // default to auto camera
+    camRad: 15,
+    alpha: 0, // initial angle of camera
+    astep: 2, // angle step in degrees
   };
+  camera.position.set(n/2, n/2, n/2+params.camRad);
 
   var gui = new DAT.GUI();
-  var freeCam = gui.add(guiParams, "freeCam").name("Free camera?").listen();
+  var freeCam = gui.add(params, "freeCam").name("Free camera?").listen();
   freeCam.onChange(function(value) {
-    guiParams.freeCam = value;
-    if (guiParams.freeCam)
+    if (params.freeCam)
     {
       controls = new THREE.OrbitControls(camera, renderer.domElement);
     }
@@ -65,20 +61,24 @@
       var curx = camera.position.x - n/2;
       var curz = camera.position.z - n/2;
 
-      r = Math.sqrt(curx*curx + curz*curz);
-      console.log("New r is " + r + " based on x " + camera.position.x + ", z " + camera.position.z);
+      params.camRad = Math.sqrt(curx*curx + curz*curz);
+      console.log("New r is " + params.camRad + " based on x " + camera.position.x + ", z " + camera.position.z);
     }
   });
+
+  var alphaStep = gui.add(params, "astep").name("Speed of rotation").min(1).max(20);
 
   var render = function () {
     requestAnimationFrame(render);
 
-    if (! guiParams.freeCam)
+    if (! params.freeCam)
     {
       // rotate the camera around in a circle
-      alpha = (alpha+astep) % (2*Math.PI);
-      camera.position.x = r * Math.sin(alpha) + n/2;
-      camera.position.z = r * Math.cos(alpha) + n/2;
+      var radstep = params.astep * Math.PI/180;
+
+      params.alpha = (params.alpha+radstep) % (2*Math.PI);
+      camera.position.x = params.camRad * Math.sin(params.alpha) + n/2;
+      camera.position.z = params.camRad * Math.cos(params.alpha) + n/2;
       camera.lookAt(new THREE.Vector3 (n/2, n/2, n/2)); // the centre
     }
 
