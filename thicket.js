@@ -13,15 +13,15 @@
   var damaged = new THREE.MeshLambertMaterial({color: 0xff0000, transparent: true, opacity: 0.7});
 
   var n = 10;
-  var cubes = new Array();
+  var cubes = [];
 
-  for (i = 0; i < n; ++i) 
+  for (var i = 0; i < n; ++i) 
   {
-    cubes[i] = new Array();
-    for (j = 0; j < n; ++j)
+    cubes[i] = [];
+    for (var j = 0; j < n; ++j)
     {
-      cubes[i][j] = new Array();
-      for (k = 0; k < n; ++k)
+      cubes[i][j] = [];
+      for (var k = 0; k < n; ++k)
       {
         var cube = new THREE.Mesh(geometry, healthy);
         cube.position.set(i, j, k);
@@ -94,8 +94,8 @@
   var changeLayerVis = function (z, visible) {
     if ((z >= n) || (z < 0)) { return; }
 
-    for (i = 0; i < n; ++i) {
-      for (j = 0; j < n; ++j) {
+    for (var i = 0; i < n; ++i) {
+      for (var j = 0; j < n; ++j) {
         cubes[i][j][z].visible = visible;
       }
     }
@@ -132,10 +132,10 @@
 
   var targetCubes = function () {
     // return all currently visible cubes
-    var targets = new Array ();
-    for (i = 0; i < n; ++i) {
-      for (j = 0; j < n; ++j) {
-        for (k = 0; k < n; ++k) {
+    var targets = [];
+    for (var i = 0; i < n; ++i) {
+      for (var j = 0; j < n; ++j) {
+        for (var k = 0; k < n; ++k) {
           if (cubes[i][j][k].visible) {
             targets.push(cubes[i][j][k]);
           }
@@ -149,27 +149,27 @@
     if (params.camType !== 'dissect') { return; }
 
     // Cribbed from http://stemkoski.github.io/Three.js/#mouse-click
-	  // update the mouse variable
-	  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-	  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-	
-	  // find intersections
+    // update the mouse variable
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-	  // create a Ray with origin at the mouse position
-	  //   and direction into the scene (camera direction)
-	  var vector = new THREE.Vector3(mouse.x, mouse.y, 1);
-	  projector.unprojectVector(vector, camera);
-	  var ray = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
+    // find intersections
 
-	  // create an array containing all objects in the scene with which the ray intersects
-	  var intersects = ray.intersectObjects(targetCubes());
-	
-	  // if there is one (or more) intersections
-	  if (intersects.length > 0)
-	  {
-		  //console.log("Hit @ " + toString(intersects[0].point) + " (of " + intersects.length + ")");
+    // create a Ray with origin at the mouse position
+    //   and direction into the scene (camera direction)
+    var vector = new THREE.Vector3(mouse.x, mouse.y, 1);
+    projector.unprojectVector(vector, camera);
+    var ray = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
+
+    // create an array containing all objects in the scene with which the ray intersects
+    var intersects = ray.intersectObjects(targetCubes());
+
+    // if there is one (or more) intersections
+    if (intersects.length > 0)
+    {
+      //console.log("Hit @ " + toString(intersects[0].point) + " (of " + intersects.length + ")");
       intersects[0].object.material = damaged;
-	  }
+    }
   };
 
   renderer.domElement.addEventListener ('mousedown', mouseClickHandler, false);
