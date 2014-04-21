@@ -10,7 +10,7 @@
   /* Setup for cube grid */
   var geometry = new THREE.CubeGeometry(1, 1, 1);
   var healthy = new THREE.MeshLambertMaterial({color: 0x00ff00, transparent: true, opacity: 0.1});
-  var damaged = new THREE.MeshLambertMaterial({color: 0xff0000, transparent: true, opacity: 0.9});
+  var damaged = new THREE.MeshLambertMaterial({color: 0xff0000, transparent: true, opacity: 0.7});
 
   var n = 10;
   var cubes = new Array();
@@ -54,10 +54,6 @@
   document.getElementById('astep_input').onchange = function() {
     params.astep = +this.value;
   };
-
-  document.getElementById('change_button').onclick = function() {
-    cubes[5][5][5].material = damaged;
-  }
 
   var toggleDissectControls = function(camType) {
     var controls = document.getElementById('dissect_controls');
