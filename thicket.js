@@ -7,6 +7,7 @@
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
+  /* Setup for cube grid */
   var geometry = new THREE.CubeGeometry(1, 1, 1);
   var healthy = new THREE.MeshLambertMaterial({color: 0x00ff00, transparent: true, opacity: 0.1});
   var damaged = new THREE.MeshLambertMaterial({color: 0xff0000, transparent: true, opacity: 0.9});
@@ -14,7 +15,7 @@
   var n = 10;
   var cubes = new Array();
 
-  for (i = 0; i < n; ++i)
+  for (i = 0; i < n; ++i) 
   {
     cubes[i] = new Array();
     for (j = 0; j < n; ++j)
@@ -30,7 +31,7 @@
     }
   }
 
-
+  /* Lighting */
   var ambLight = new THREE.AmbientLight(0x404040);
   ambLight.position.set(-5, 5, 0);
   scene.add(ambLight);
@@ -39,11 +40,11 @@
   dirLight.position.set(-1, 1, 1); // from the front top left
   scene.add(dirLight);
 
-  // Gui and camera params 
+  /* Setup and link gui to camera params */ 
   var params =
   {
-    camType: 'rotate',
-    camRad: 15,
+    camType: 'rotate', // can be rotate, free, or dissect
+    camRad: 15, // radius of camera from centre
     alpha: 0, // initial angle of camera
     astep: 2, // angle step in degrees
     zdepth: n, // number of z layers to show
@@ -61,12 +62,10 @@
   var toggleDissectControls = function(camType) {
     var controls = document.getElementById('dissect_controls');
 
-    if (camType === 'dissect')
-    {
+    if (camType === 'dissect') {
       controls.classList.remove('hidden');
     }
-    else
-    {
+    else {
       controls.classList.add('hidden');
     }
   };
@@ -75,20 +74,17 @@
     params.camType = this.value;
     toggleDissectControls(params.camType);
 
-    if (params.camType === 'free')
-    {
+    if (params.camType === 'free') {
       controls = new THREE.OrbitControls(camera, renderer.domElement);
     }
-    else if (params.camType === 'dissect')
-    {
+    else if (params.camType === 'dissect') {
       // manual camera position was [15, 10.8, 11.4]
       camera.position.set(-5, 11, 11);
       camera.lookAt(new THREE.Vector3 (n/2, n/2, n/2)); // the centre
       params.camRad = 16;
-      controls = null;
+      controls = null; // disable mouse control
     }
-    else if (params.camType === 'rotate')
-    {
+    else if (params.camType === 'rotate') {
       // from current position, work out new radius
       var curx = camera.position.x - n/2;
       var curz = camera.position.z - n/2;
@@ -99,7 +95,6 @@
   };
 
   /* Dissection controls */
-
   var changeLayerVis = function (z, visible) {
     for (i = 0; i < n; ++i) {
       for (j = 0; j < n; ++j) {
@@ -134,12 +129,11 @@
   };
 
 
-
+  /* Render loop */
   var render = function () {
     requestAnimationFrame(render);
 
-    if (params.camType === 'rotate')
-    {
+    if (params.camType === 'rotate') {
       // rotate the camera around in a circle
       var radstep = params.astep * Math.PI/180;
 
