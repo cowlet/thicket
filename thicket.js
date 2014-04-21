@@ -15,8 +15,6 @@
   var n = 10;
   var cubes = new Array();
 
-  var targetList = new Array();
-
   for (i = 0; i < n; ++i) 
   {
     cubes[i] = new Array();
@@ -29,8 +27,6 @@
         cube.position.set(i, j, k);
         scene.add(cube);
         cubes[i][j][k] = cube;
-
-        targetList.push(cube);
       }
     }
   }
@@ -138,13 +134,25 @@
   var projector = new THREE.Projector ();
   var mouse = { x: 0, y: 0 };
 
+  var targetCubes = function () {
+    // return all currently visible cubes
+    var targets = new Array ();
+    for (i = 0; i < n; ++i) {
+      for (j = 0; j < n; ++j) {
+        for (k = 0; k < n; ++k) {
+          if (cubes[i][j][k].visible) {
+            targets.push(cubes[i][j][k]);
+          }
+        }
+      }
+    }
+    return targets;
+  };
+
   var mouseClickHandler = function (event) {
-    console.log("Got a click");
     if (params.camType !== 'dissect') { return; }
 
     // Cribbed from http://stemkoski.github.io/Three.js/#mouse-click
-    console.log("Dissect click");
-	
 	  // update the mouse variable
 	  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
 	  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -158,7 +166,7 @@
 	  var ray = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
 
 	  // create an array containing all objects in the scene with which the ray intersects
-	  var intersects = ray.intersectObjects(targetList);
+	  var intersects = ray.intersectObjects(targetCubes());
 	
 	  // if there is one (or more) intersections
 	  if (intersects.length > 0)
