@@ -15,6 +15,8 @@
   var n = 10;
   var cubes = new Array();
 
+  var targetList = new Array();
+
   for (i = 0; i < n; ++i) 
   {
     cubes[i] = new Array();
@@ -27,6 +29,8 @@
         cube.position.set(i, j, k);
         scene.add(cube);
         cubes[i][j][k] = cube;
+
+        targetList.push(cube);
       }
     }
   }
@@ -130,6 +134,41 @@
     return false;
   };
 
+  /* Respond to mouse in dissection mode */
+  var projector = new THREE.Projector ();
+  var mouse = { x: 0, y: 0 };
+
+  var mouseClickHandler = function (event) {
+    console.log("Got a click");
+    if (params.camType !== 'dissect') { return; }
+
+    // Cribbed from http://stemkoski.github.io/Three.js/#mouse-click
+    console.log("Dissect click");
+	
+	  // update the mouse variable
+	  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+	  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+	
+	  // find intersections
+
+	  // create a Ray with origin at the mouse position
+	  //   and direction into the scene (camera direction)
+	  var vector = new THREE.Vector3(mouse.x, mouse.y, 1);
+	  projector.unprojectVector(vector, camera);
+	  var ray = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
+
+	  // create an array containing all objects in the scene with which the ray intersects
+	  var intersects = ray.intersectObjects(targetList);
+	
+	  // if there is one (or more) intersections
+	  if (intersects.length > 0)
+	  {
+		  //console.log("Hit @ " + toString(intersects[0].point) + " (of " + intersects.length + ")");
+      intersects[0].object.material = damaged;
+	  }
+  };
+
+  renderer.domElement.addEventListener ('mousedown', mouseClickHandler, false);
 
   /* Render loop */
   var render = function () {
