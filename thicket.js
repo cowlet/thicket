@@ -46,6 +46,7 @@
     camRad: 15,
     alpha: 0, // initial angle of camera
     astep: 2, // angle step in degrees
+    zdepth: n, // number of z layers to show
   };
   camera.position.set(n/2, n/2, n/2+params.camRad);
 
@@ -81,7 +82,7 @@
     else if (params.camType === 'dissect')
     {
       // manual camera position was [15, 10.8, 11.4]
-      camera.position.set(15, 11, 11);
+      camera.position.set(-5, 11, 11);
       camera.lookAt(new THREE.Vector3 (n/2, n/2, n/2)); // the centre
       params.camRad = 16;
       controls = null;
@@ -95,6 +96,41 @@
       params.camRad = Math.sqrt(curx*curx + curz*curz);
       console.log("New r is " + params.camRad + " based on x " + camera.position.x + ", z " + camera.position.z);
     }
+  };
+
+  /* Dissection controls */
+
+  var changeLayerVis = function (z, visible) {
+    for (i = 0; i < n; ++i) {
+      for (j = 0; j < n; ++j) {
+        cubes[i][j][z].visible = visible;
+      }
+    }
+  };
+
+  document.getElementById('dissect_in_button').onclick = function() {
+    // slice off top layer
+    params.zdepth -= 1;
+    if (params.zdepth < 0) {
+      params.zdepth = 0;
+    }
+
+    changeLayerVis (params.zdepth, false);
+    //console.log("In button clicked, new zdepth " + params.zdepth);
+    return false;
+  };
+
+  document.getElementById('dissect_out_button').onclick = function() {
+    // put back next layer
+    changeLayerVis (params.zdepth, true);
+
+    params.zdepth += 1;
+    if (params.zdepth > n) {
+      params.zdepth = n;
+    }
+
+    //console.log("Out button clicked, new zdepth " + params.zdepth);
+    return false;
   };
 
 
