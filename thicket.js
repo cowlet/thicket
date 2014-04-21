@@ -96,6 +96,8 @@
 
   /* Dissection controls */
   var changeLayerVis = function (z, visible) {
+    if ((z >= n) || (z < 0)) { return; }
+
     for (i = 0; i < n; ++i) {
       for (j = 0; j < n; ++j) {
         cubes[i][j][z].visible = visible;
