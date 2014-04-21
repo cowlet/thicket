@@ -1,0 +1,36 @@
+* {
+  box-sizing: border-box;
+  font: helvetica;
+}
+
+canvas {
+  width: 100%; height: 100%
+}
+
+.controls {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 150px;
+  height: auto;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px;
+}
+
+.control {
+  margin: 5px 0;
+  overflow: auto;
+}
+
+.control.hidden {
+  display: none;
+}
+
+.control input, .control select, .control button {
+  width: 100%;
+  float: left;
+}
+
+.control .half { width: 50%; }
+.control .third { width: 33.33%; }
+.control .quarter { width: 25%; }

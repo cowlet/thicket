@@ -39,25 +39,54 @@
   dirLight.position.set(1, 1, 1); // from the front top right
   scene.add(dirLight);
 
-  // Gui and params 
-  var gui = new dat.gui.GUI();
+  // Gui and camera params 
   var params =
   {
-    freeCam: false, // default to auto camera
+    camType: 'rotate',
     camRad: 15,
     alpha: 0, // initial angle of camera
     astep: 2, // angle step in degrees
-    change: function () { cubes[5][5][5].material = damaged; },
   };
   camera.position.set(n/2, n/2, n/2+params.camRad);
 
-  var freeCam = gui.add(params, "freeCam").name("Free camera?").listen();
-  freeCam.onChange(function(value) {
-    if (params.freeCam)
+  document.getElementById('astep_input').onchange = function() {
+    params.astep = +this.value;
+  };
+
+  document.getElementById('change_button').onclick = function() {
+    cubes[5][5][5].material = damaged;
+  }
+
+  var toggleDissectControls = function(camType) {
+    var controls = document.getElementById('dissect_controls');
+
+    if (camType === 'dissect')
+    {
+      controls.classList.remove('hidden');
+    }
+    else
+    {
+      controls.classList.add('hidden');
+    }
+  };
+
+  document.getElementById('camera_select').onchange = function() {
+    params.camType = this.value;
+    toggleDissectControls(params.camType);
+
+    if (params.camType === 'free')
     {
       controls = new THREE.OrbitControls(camera, renderer.domElement);
     }
-    else
+    else if (params.camType === 'dissect')
+    {
+      // manual camera position was [15, 10.8, 11.4]
+      camera.position.set(15, 11, 11);
+      camera.lookAt(new THREE.Vector3 (n/2, n/2, n/2)); // the centre
+      params.camRad = 16;
+      controls = null;
+    }
+    else if (params.camType === 'rotate')
     {
       // from current position, work out new radius
       var curx = camera.position.x - n/2;
@@ -66,19 +95,14 @@
       params.camRad = Math.sqrt(curx*curx + curz*curz);
       console.log("New r is " + params.camRad + " based on x " + camera.position.x + ", z " + camera.position.z);
     }
-  });
+  };
 
-  var alphaStep = gui.add(params, "astep").name("Speed of rotation").min(1).max(20);
-
-  var changeCol = gui.add(params, "change").name("Change a cube colour");
-
-  // manual camera position was [15, 10.8, 11.4]
 
 
   var render = function () {
     requestAnimationFrame(render);
 
-    if (! params.freeCam)
+    if (params.camType === 'rotate')
     {
       // rotate the camera around in a circle
       var radstep = params.astep * Math.PI/180;
@@ -89,7 +113,7 @@
       camera.lookAt(new THREE.Vector3 (n/2, n/2, n/2)); // the centre
     }
 
-    //console.log("Camera is at [" + camera.position.x + ", " + camera.position.y + ", " + camera.position.z + "]");
+    //console.log("Camera is at [" + camera.position.x + ", " + camera.position.y + ", " + camera.position.z + "], with radius " + params.camRad);
 
     renderer.render(scene, camera);
   };

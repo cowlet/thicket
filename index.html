@@ -1,12 +1,34 @@
 <html>
 	<head>
 		<title>Thicket</title>
-		<style>canvas { width: 100%; height: 100% }</style>
+    <link rel="stylesheet" href="app.css">
 	</head>
 	<body>
+    <form class="controls">
+      <div class="control">
+        <select name="camera" id="camera_select">
+          <option value="rotate" selected>Rotate</option>
+          <option value="free">Free</option>
+          <option value="dissect">Dissect</option>
+        </select>
+      </div>
+
+      <div class="control hidden" id="dissect_controls">
+        <button id="dissect_backward_button" class="half">&larr;</button>
+        <button id="dissect_forward_button" class="half">&rarr;</button>
+      </div>
+
+      <div class="control">
+        <input type="number" name="astep" id="astep_input" min="1" max="45" value="2">
+      </div>
+
+      <div class="control">
+        <button type="button" id="change_button">Change</button>
+      </div>
+    </form>
+
 		<script src="bower_components/threejs/build/three.min.js"></script>
 		<script src="bower_components/threejs-controls/controls/OrbitControls.js"></script>
-    <script src="bower_components/dat.gui/dat.gui.js"></script>
     <script src="thicket.js"></script>
 	</body>
 </html>

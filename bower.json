@@ -17,7 +17,6 @@
   ],
   "dependencies": {
     "threejs": "*",
-    "dat.gui": "*",
     "threejs-controls": "*"
   }
 }
