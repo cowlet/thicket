@@ -39,7 +39,8 @@
   dirLight.position.set(1, 1, 1); // from the front top right
   scene.add(dirLight);
 
-
+  // Gui and params 
+  var gui = new dat.gui.GUI();
   var params =
   {
     freeCam: false, // default to auto camera
@@ -50,7 +51,6 @@
   };
   camera.position.set(n/2, n/2, n/2+params.camRad);
 
-  var gui = new dat.gui.GUI();
   var freeCam = gui.add(params, "freeCam").name("Free camera?").listen();
   freeCam.onChange(function(value) {
     if (params.freeCam)
@@ -72,6 +72,8 @@
 
   var changeCol = gui.add(params, "change").name("Change a cube colour");
 
+  // manual camera position was [15, 10.8, 11.4]
+
 
   var render = function () {
     requestAnimationFrame(render);
@@ -86,6 +88,8 @@
       camera.position.z = params.camRad * Math.cos(params.alpha) + n/2;
       camera.lookAt(new THREE.Vector3 (n/2, n/2, n/2)); // the centre
     }
+
+    //console.log("Camera is at [" + camera.position.x + ", " + camera.position.y + ", " + camera.position.z + "]");
 
     renderer.render(scene, camera);
   };
