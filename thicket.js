@@ -36,7 +36,7 @@
   scene.add(ambLight);
 
   var dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
-  dirLight.position.set(1, 1, 1); // from the front top right
+  dirLight.position.set(-1, 1, 1); // from the front top left
   scene.add(dirLight);
 
   // Gui and camera params 
