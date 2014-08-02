@@ -25,13 +25,14 @@
   resin.position.set(centrex, centrey, 0);
   scene.add(resin);
 
-  /* do the points first */
+  /* Add damage points and segments */
   for (var i = 0; i < tree.xmax; ++i) 
   {
     for (var j = 0; j < tree.ymax; ++j)
     {
       for (var k = 0; k < tree.zmax; ++k)
       {
+        /* Add tree points */
         if (tree.points[i][j].treePoint)
         {
           //console.log("Adding a tree point [" + i + "," + j + "]");
@@ -39,7 +40,31 @@
           sphere.position.set(i, j, k);
           scene.add(sphere);
 
-          //tree.points[i][j].meshes.add(sphere);
+          tree.points[i][j].meshes.push(sphere);
+        }
+
+        /* Add horizontal segments */
+        if (tree.points[i][j].x_r > 0)
+        {
+          var r = tree.points[i][j].x_r;
+          var seg = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h), damaged);
+          seg.position.set(i+h/2, j, k);
+          seg.rotation.x = Math.PI/2;
+          seg.rotation.z = Math.PI/2;
+          scene.add(seg);
+
+          tree.points[i][j].meshes.push(seg);
+        }
+
+        /* Add vertical segments */
+        if (tree.points[i][j].y_r > 0)
+        {
+          var r = tree.points[i][j].y_r;
+          var seg = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h), damaged);
+          seg.position.set(i, j+h/2, k);
+          scene.add(seg);
+
+          tree.points[i][j].meshes.push(seg);
         }
       }
     }
@@ -151,10 +176,10 @@
       params.alpha = (params.alpha+radstep) % (2*Math.PI);
       camera.position.x = params.camRad * Math.sin(params.alpha) + centrex; 
       camera.position.z = params.camRad * Math.cos(params.alpha) + centrez; 
-      camera.lookAt(new THREE.Vector3 (centrex, centrey, centrez)); // the centre
     }
 
     //console.log("Camera is at [" + camera.position.x + ", " + camera.position.y + ", " + camera.position.z + "], with radius " + params.camRad);
+    camera.lookAt(new THREE.Vector3 (centrex, centrey, centrez)); // the centre
 
     renderer.render(scene, camera);
   };

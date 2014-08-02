@@ -1,5 +1,5 @@
-var h = 50;
-var R = h/2;
+var h = 1;
+var R = 1/50;
 
 var pointInit = function (pointChar) {
 
