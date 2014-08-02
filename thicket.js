@@ -1,32 +1,46 @@
 (function ()
 {
   var scene = new THREE.Scene();
-  var camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+  var camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 1, 1000);
 
   var renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
+  renderer.sortObjects = false;
 
-  /* Setup for cube grid */
-  var geometry = new THREE.CubeGeometry(1, 1, 1);
+  /* Set up materials */
   var healthy = new THREE.MeshLambertMaterial({color: 0x00ff00, transparent: true, opacity: 0.1});
   var damaged = new THREE.MeshLambertMaterial({color: 0xff0000, transparent: true, opacity: 0.7});
 
-  var n = 10;
-  var cubes = [];
+  /* Generate tree model */
+  var tree = createTree();
 
-  for (var i = 0; i < n; ++i) 
+  // Set up co-ordinate points
+  var centrex = tree.xmax/2;
+  var centrey = tree.ymax/2;
+  var centrez = tree.zmax/2;
+
+  /* Draw the resin */
+  var resin = new THREE.Mesh(new THREE.CubeGeometry(tree.xmax, tree.ymax, tree.zmax), healthy);
+  resin.position.set(centrex, centrey, 0);
+  scene.add(resin);
+
+  /* do the points first */
+  for (var i = 0; i < tree.xmax; ++i) 
   {
-    cubes[i] = [];
-    for (var j = 0; j < n; ++j)
+    for (var j = 0; j < tree.ymax; ++j)
     {
-      cubes[i][j] = [];
-      for (var k = 0; k < n; ++k)
+      for (var k = 0; k < tree.zmax; ++k)
       {
-        var cube = new THREE.Mesh(geometry, healthy);
-        cube.position.set(i, j, k);
-        scene.add(cube);
-        cubes[i][j][k] = cube;
+        if (tree.points[i][j].treePoint)
+        {
+          //console.log("Adding a tree point [" + i + "," + j + "]");
+          var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), damaged);
+          sphere.position.set(i, j, k);
+          scene.add(sphere);
+
+          //tree.points[i][j].meshes.add(sphere);
+        }
       }
     }
   }
@@ -44,12 +58,12 @@
   var params =
   {
     camType: 'rotate', // can be rotate, free, or dissect
-    camRad: 15, // radius of camera from centre
+    camRad: 30, // radius of camera from centre
     alpha: 0, // initial angle of camera
     astep: 2, // angle step in degrees
-    zdepth: n, // number of z layers to show
+    zdepth: tree.zmax, // number of z layers to show
   };
-  camera.position.set(n/2, n/2, n/2+params.camRad);
+  camera.position.set(centrex, centrey, centrez+params.camRad);
 
   document.getElementById('astep_input').onchange = function() {
     params.astep = +this.value;
@@ -76,27 +90,26 @@
     else if (params.camType === 'dissect') {
       // manual camera position was [15, 10.8, 11.4]
       camera.position.set(-5, 11, 11);
-      camera.lookAt(new THREE.Vector3 (n/2, n/2, n/2)); // the centre
+      camera.lookAt(new THREE.Vector3 (tree.xmax/2, tree.xmax/2, tree.xmax/2)); // the centre
       params.camRad = 16;
       controls = null; // disable mouse control
     }
     else if (params.camType === 'rotate') {
       // from current position, work out new radius
-      var curx = camera.position.x - n/2;
-      var curz = camera.position.z - n/2;
-
-      params.camRad = Math.sqrt(curx*curx + curz*curz);
+      params.camRad = Math.sqrt(camera.position.x*camera.position.x + camera.position.z*camera.position.z);
       console.log("New r is " + params.camRad + " based on x " + camera.position.x + ", z " + camera.position.z);
     }
   };
 
   /* Dissection controls */
   var changeLayerVis = function (z, visible) {
-    if ((z >= n) || (z < 0)) { return; }
+    if ((z >= tree.zmax) || (z < 0)) { return; }
 
-    for (var i = 0; i < n; ++i) {
-      for (var j = 0; j < n; ++j) {
-        cubes[i][j][z].visible = visible;
+    for (var i = 0; i < tree.xmax; ++i) {
+      for (var j = 0; j < tree.ymax; ++j) {
+        for (var m in tree.points[i][j].meshes)
+          m.visible = visible
+        //cubes[i][j][z].visible = visible;
       }
     }
   };
@@ -118,61 +131,14 @@
     changeLayerVis (params.zdepth, true);
 
     params.zdepth += 1;
-    if (params.zdepth > n) {
-      params.zdepth = n;
+    if (params.zdepth > tree.zmax) {
+      params.zdepth = tree.zmax;
     }
 
     //console.log("Out button clicked, new zdepth " + params.zdepth);
     return false;
   };
 
-  /* Respond to mouse in dissection mode */
-  var projector = new THREE.Projector ();
-  var mouse = { x: 0, y: 0 };
-
-  var targetCubes = function () {
-    // return all currently visible cubes
-    var targets = [];
-    for (var i = 0; i < n; ++i) {
-      for (var j = 0; j < n; ++j) {
-        for (var k = 0; k < n; ++k) {
-          if (cubes[i][j][k].visible) {
-            targets.push(cubes[i][j][k]);
-          }
-        }
-      }
-    }
-    return targets;
-  };
-
-  var mouseClickHandler = function (event) {
-    if (params.camType !== 'dissect') { return; }
-
-    // Cribbed from http://stemkoski.github.io/Three.js/#mouse-click
-    // update the mouse variable
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-    // find intersections
-
-    // create a Ray with origin at the mouse position
-    //   and direction into the scene (camera direction)
-    var vector = new THREE.Vector3(mouse.x, mouse.y, 1);
-    projector.unprojectVector(vector, camera);
-    var ray = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
-
-    // create an array containing all objects in the scene with which the ray intersects
-    var intersects = ray.intersectObjects(targetCubes());
-
-    // if there is one (or more) intersections
-    if (intersects.length > 0)
-    {
-      //console.log("Hit @ " + toString(intersects[0].point) + " (of " + intersects.length + ")");
-      intersects[0].object.material = damaged;
-    }
-  };
-
-  renderer.domElement.addEventListener ('mousedown', mouseClickHandler, false);
 
   /* Render loop */
   var render = function () {
@@ -183,9 +149,9 @@
       var radstep = params.astep * Math.PI/180;
 
       params.alpha = (params.alpha+radstep) % (2*Math.PI);
-      camera.position.x = params.camRad * Math.sin(params.alpha) + n/2;
-      camera.position.z = params.camRad * Math.cos(params.alpha) + n/2;
-      camera.lookAt(new THREE.Vector3 (n/2, n/2, n/2)); // the centre
+      camera.position.x = params.camRad * Math.sin(params.alpha) + centrex; 
+      camera.position.z = params.camRad * Math.cos(params.alpha) + centrez; 
+      camera.lookAt(new THREE.Vector3 (centrex, centrey, centrez)); // the centre
     }
 
     //console.log("Camera is at [" + camera.position.x + ", " + camera.position.y + ", " + camera.position.z + "], with radius " + params.camRad);
