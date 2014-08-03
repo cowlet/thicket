@@ -110,11 +110,15 @@ var createTree = function(treePic) {
   return tree;
 };
 
+var degToRad = function(deg) {
+  return (deg * Math.PI / 180);
+};
+
 var modelTick = function() {
   /* We want 3600 time steps per cycle, increasing by 0.1deg each step */
   phase = phase + deltaP;
 
-  var V = V0 * Math.sin(phase);
+  var V = V0 * Math.sin(degToRad(phase));
   return [phase, V];
 };
 

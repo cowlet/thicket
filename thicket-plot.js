@@ -33,7 +33,7 @@ var degreesToX = function(degrees, plot) {
   // plot.width-2*indent is equivalent to 360
   var scale = (plot.width - 2*indent) / 360;
 
-  return (indent + degrees*scale);
+  return (indent + ((degrees*scale) % (plot.width - 2*indent)));
 };
 
 var voltsToY = function(volts, plot) {
