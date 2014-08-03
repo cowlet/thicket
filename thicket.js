@@ -11,9 +11,10 @@
   /* Set up materials */
   var healthy = new THREE.MeshLambertMaterial({color: 0x00ff00, transparent: true, opacity: 0.1});
   var damaged = new THREE.MeshLambertMaterial({color: 0xff0000, transparent: true, opacity: 0.7});
+  var pin = new THREE.MeshLambertMaterial({color: 0x555555}); 
 
   /* Generate tree model */
-  var tree = createTree();
+  var tree = createTree(tree2);
 
   // Set up co-ordinate points
   var centrex = tree.xmax/2;
@@ -36,7 +37,10 @@
         if (tree.points[i][j].treePoint)
         {
           //console.log("Adding a tree point [" + i + "," + j + "]");
-          var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), damaged);
+          if (tree.points[i][j].pin)
+            var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), pin);
+          else
+            var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), damaged);
           sphere.position.set(i, j, k);
           scene.add(sphere);
 
@@ -164,9 +168,14 @@
     return false;
   };
 
+  var registerRenderTick = function() {
+    /* 1/60th of a second */
+    var data = modelTick();
+
+  };
 
   /* Render loop */
-  var render = function () {
+  var render = function() {
     requestAnimationFrame(render);
 
     if (params.camType === 'rotate') {
@@ -179,11 +188,14 @@
     }
 
     //console.log("Camera is at [" + camera.position.x + ", " + camera.position.y + ", " + camera.position.z + "], with radius " + params.camRad);
-    camera.lookAt(new THREE.Vector3 (centrex, centrey, centrez)); // the centre
+    camera.lookAt(new THREE.Vector3(centrex, centrey, centrez)); // the centre
+
+    registerRenderTick();
 
     renderer.render(scene, camera);
   };
 
+  initPlot();
   render();
 }());
 

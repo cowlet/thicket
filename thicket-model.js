@@ -1,7 +1,39 @@
+/* Global model parameters */
 var h = 1;
 var R = 1/50;
 
-var pointInit = function (pointChar) {
+var V0 = 14142; // 10kV rms
+var phase = 0;
+var deltaP = 0.1;
+
+
+var tree2 = [
+  "             p                ",
+  "             |                ",
+  "             |                ",
+  "           /--/.              ",
+  "         /-|  |               ",
+  "        -| |  /--|            ",
+  "         | . /.  |            ",
+  "        /-|  |   /.           ",
+  "        . | /-|  .            ",
+  "          . | |               ",
+  "            . |               ",
+  "              .               ",
+  "                              ",
+  "                              ",
+  "                              "
+];
+
+/* Each point has a right and down component.
+ * . : tree point only
+ * | : down segment only
+ * - : right segment only
+ * / : down and right segment
+ * p : pin and down segment
+ */
+
+var pointInit = function(pointChar) {
 
   var point = {
     treePoint: false,
@@ -33,34 +65,8 @@ var pointInit = function (pointChar) {
   return point;
 };
 
-/* Each point has a right and down component.
- * . : tree point only
- * | : down segment only
- * - : right segment only
- * / : down and right segment
- * p : pin and down segment
- */
-
-var tree2 = [
-  "             p                ",
-  "             |                ",
-  "             |                ",
-  "           /--/.              ",
-  "         /-|  |               ",
-  "        -| |  /--|            ",
-  "         | . /.  |            ",
-  "        /-|  |   /.           ",
-  "        . | /-|  .            ",
-  "          . | |               ",
-  "            . |               ",
-  "              .               ",
-  "                              ",
-  "                              ",
-  "                              "
-];
-
    
-var generateTree = function (treePic) {
+var generateTree = function(treePic) {
   if ((treePic.length < 1) || (treePic[0].length < 1))
     return null; // must have two dimensions
 
@@ -92,7 +98,7 @@ var generateTree = function (treePic) {
   return points;
 };
 
-var createTree = function (treePic) {
+var createTree = function(treePic) {
   var points = generateTree(treePic);
 
   var tree = {
@@ -103,4 +109,13 @@ var createTree = function (treePic) {
   };
   return tree;
 };
+
+var modelTick = function() {
+  /* We want 3600 time steps per cycle, increasing by 0.1deg each step */
+  phase = phase + deltaP;
+
+  var V = V0 * Math.sin(phase);
+  return [phase, V];
+};
+
 
