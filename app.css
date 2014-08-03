@@ -35,6 +35,11 @@ canvas {
   float: left;
 }
 
+.control input[type=checkbox] {
+  width: auto;
+  float: none;
+}
+
 .control .half { width: 50%; }
 .control .third { width: 33.33%; }
 .control .quarter { width: 25%; }

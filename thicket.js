@@ -11,7 +11,7 @@
   /* Set up materials */
   var healthy = new THREE.MeshLambertMaterial({color: 0x00ff00, transparent: true, opacity: 0.1});
   var damaged = new THREE.MeshLambertMaterial({color: 0xff0000, transparent: true, opacity: 0.7});
-  var pin = new THREE.MeshLambertMaterial({color: 0x555555}); 
+  var electrode = new THREE.MeshLambertMaterial({color: 0x555555}); 
 
   /* Generate tree model */
   var tree = createTree(tree2);
@@ -22,9 +22,12 @@
   var centrez = tree.zmax/2;
 
   /* Draw the resin */
-  var resin = new THREE.Mesh(new THREE.CubeGeometry(tree.xmax, tree.ymax, tree.zmax), healthy);
+  var resin = new THREE.Mesh(new THREE.BoxGeometry(tree.xmax, tree.ymax, tree.zmax), healthy);
   resin.position.set(centrex, centrey, 0);
   scene.add(resin);
+  var plate = new THREE.Mesh(new THREE.BoxGeometry(tree.xmax, 1, 1), electrode);
+  plate.position.set(centrex, tree.ymax+0.5, 0);
+  scene.add(plate);
 
   /* Add damage points and segments */
   for (var i = 0; i < tree.xmax; ++i) 
@@ -38,7 +41,7 @@
         {
           //console.log("Adding a tree point [" + i + "," + j + "]");
           if (tree.points[i][j].pin)
-            var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), pin);
+            var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), electrode);
           else
             var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), damaged);
           sphere.position.set(i, j, k);
@@ -48,11 +51,11 @@
         }
 
         /* Add horizontal segments */
-        if (tree.points[i][j].x_r > 0)
+        if (tree.points[i][j].x_seg.r > 0)
         {
-          var r = tree.points[i][j].x_r;
-          var seg = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h), damaged);
-          seg.position.set(i+h/2, j, k);
+          var r = tree.points[i][j].x_seg.r;
+          var seg = new THREE.Mesh(new THREE.CylinderGeometry(scale*r, scale*r, scale*h), damaged);
+          seg.position.set(i+(scale*h)/2, j, k);
           seg.rotation.x = Math.PI/2;
           seg.rotation.z = Math.PI/2;
           scene.add(seg);
@@ -61,11 +64,11 @@
         }
 
         /* Add vertical segments */
-        if (tree.points[i][j].y_r > 0)
+        if (tree.points[i][j].y_seg.r > 0)
         {
-          var r = tree.points[i][j].y_r;
-          var seg = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h), damaged);
-          seg.position.set(i, j+h/2, k);
+          var r = tree.points[i][j].y_seg.r;
+          var seg = new THREE.Mesh(new THREE.CylinderGeometry(scale*r, scale*r, scale*h), damaged);
+          seg.position.set(i, j+(scale*h)/2, k);
           scene.add(seg);
 
           tree.points[i][j].meshes.push(seg);
@@ -75,13 +78,15 @@
   }
 
   /* Lighting */
-  var ambLight = new THREE.AmbientLight(0x404040);
-  ambLight.position.set(-5, 5, 0);
+  var ambLight = new THREE.AmbientLight(0x202020);
   scene.add(ambLight);
 
-  var dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
-  dirLight.position.set(-1, 1, 1); // from the front top left
-  scene.add(dirLight);
+  // Add directional lights to front and back (from top left)
+  [1, -1].forEach(function(z) {
+    var dirLight = new THREE.DirectionalLight(0xffffff, 0.75);
+    dirLight.position.set(-1, 1, z);
+    scene.add(dirLight);
+  });
 
   /* Setup and link gui to camera params */ 
   var params =
@@ -91,6 +96,7 @@
     alpha: 0, // initial angle of camera
     astep: 2, // angle step in degrees
     zdepth: tree.zmax, // number of z layers to show
+    equipot: false, // show equipotential planes
   };
   camera.position.set(centrex, centrey, centrez+params.camRad);
 
@@ -109,7 +115,8 @@
     }
   };
 
-  document.getElementById('camera_select').onchange = function() {
+  var camera_select = document.getElementById('camera_select');
+  camera_select.onchange = function() {
     params.camType = this.value;
     toggleDissectControls(params.camType);
 
@@ -129,6 +136,7 @@
       console.log("New r is " + params.camRad + " based on x " + camera.position.x + ", z " + camera.position.z);
     }
   };
+  camera_select.dispatchEvent(new Event('change'));
 
   /* Dissection controls */
   var changeLayerVis = function (z, visible) {
@@ -168,12 +176,49 @@
     return false;
   };
 
+  // Show or hide equipotential
+  var potmeshes = [];
+  var equipot = document.getElementById('equipot_input');
+  equipot.onchange = function() {
+    //console.log("Click: " + this.checked);
+    params.equipot = this.checked;
+
+    var voltages = ["#000", "#111", "#222", "#333", "#444", "#555", "#666", "#777", "#888", "#999", "#aaa", "#bbb", "#ccc", "#ddd", "#eee", "#fff"];
+
+    if (this.checked)
+    {
+      for (var i = 1; i < tree.xmax; ++i) // start from 1
+      {
+        for (var j = 1; j < tree.ymax; ++j) // start from 1
+        {
+          var Vint = Math.floor(Math.abs(tree.points[i][j].Vu_app));
+          var color = voltages[Math.min(voltages.length - 1, Vint)];
+          //console.log("Vint = " + Vint + ", voltages[Vint] = " + color);
+
+          var label = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.1),
+                                     new THREE.MeshLambertMaterial({color: color, transparent: true, opacity: 0.75}));
+          label.position.set(i, j, 0);
+          scene.add(label);
+          potmeshes.push(label);
+        }
+      }
+    }
+    else
+    {
+      potmeshes.forEach(function(p) {
+        scene.remove(p);
+      });
+      potmeshes = [];
+    }
+  };
+  equipot.dispatchEvent(new Event('change'));
+
   /* Initialise voltage plot */
   var Vplot = initPlot();
 
   var registerRenderTick = function() {
     /* 1/60th of a second */
-    var data = modelTick();
+    var data = modelTick(tree);
 
     updatePlot(data, Vplot);
   };
