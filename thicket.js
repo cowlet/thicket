@@ -168,10 +168,14 @@
     return false;
   };
 
+  /* Initialise voltage plot */
+  var Vplot = initPlot();
+
   var registerRenderTick = function() {
     /* 1/60th of a second */
     var data = modelTick();
 
+    updatePlot(data, Vplot);
   };
 
   /* Render loop */
@@ -195,7 +199,6 @@
     renderer.render(scene, camera);
   };
 
-  initPlot();
   render();
 }());
 
