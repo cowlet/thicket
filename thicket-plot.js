@@ -42,11 +42,18 @@ var voltsToY = function(volts, plot) {
   return (xheight - volts*scale);
 };
 
+var plotColour = function(phase) {
+  var colours = ["#625192", "#4a9470"];
+  // complements are ["#d4c36a", "#d4856a"]
+  return colours[ (Math.floor(phase/360) % 2) ];
+};
+
 var updatePlot = function(data, plot) {
   // data = [phase, V]
   // plot on appropriate point
   // cycle back to start if phase > 2 pi
   var ctx = plot.getContext("2d");
-  ctx.fillStyle = "#fff";
+
+  ctx.fillStyle = plotColour(data[0]);
   ctx.fillRect(degreesToX(data[0], plot), voltsToY(data[1], plot), 2, 2);
 };
