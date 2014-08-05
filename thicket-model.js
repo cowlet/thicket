@@ -159,7 +159,7 @@ var createTree = function(treePic) {
   tree.vector_dist = function(r1, r2) {
     var x = h * (r1[0] - r2[0]);
     var y = h * (r1[1] - r2[1]);
-    return Math.sqrt(x*x + y*y);
+    return parseFloat(Math.sqrt(x*x + y*y).toPrecision(4));
   };
 
   tree.dist_to_pin = function (r) {
@@ -187,30 +187,53 @@ var createTree = function(treePic) {
 
   // Now the correction factors F and G
   tree.calcF = function(r1, r2) {
-    // Due to Javascript, need to round each part to 4 s.f.
-    var p1 = tree.vector_dist(tree.rstar(r1), r2).toPrecision(4);
-    var p2 = tree.vector_dist(tree.rstar(r2), r2).toPrecision(4);
-    var p3 = tree.vector_dist(tree.rstar(r1), r1).toPrecision(4);
-    var p4 = tree.vector_dist(tree.rstar(r2), r1).toPrecision(4);
+    var p1 = tree.vector_dist(tree.rstar(r1), r2);
+    var p2 = tree.vector_dist(tree.rstar(r2), r2);
+    var p3 = tree.vector_dist(tree.rstar(r1), r1);
+    var p4 = tree.vector_dist(tree.rstar(r2), r1);
 
     return (1/Math.abs(p1) - 1/Math.abs(p2) - 1/Math.abs(p3) + 1/Math.abs(p4));
+  };
+
+  tree.calcG = function(r1, r2) {
+    // Different calc if we overlap the pin
+    if ((r1[0] === tree.r_p[0] && r1[1] === tree.r_p[1]) ||
+        (r2[0] === tree.r_p[0] && r2[1] === tree.r_p[1]))
+    {
+      //console.log("In G, point is pin");
+      var p1 = tree.vector_dist(tree.rstar(r1), tree.r_p);
+      var p2 = tree.vector_dist(tree.rstar(r2), tree.r_p);
+
+      return Math.pow((-2 + 1/Math.abs(p1) - 1/Math.abs(p2)), 2) / (3 - 1/tree.pin_to_img);
+    }
+
+    //console.log("In G, point is not pin: r1=" + r1 + ", r_p=" + tree.r_p);
+    // Usual case with no overlap
+    var p1 = tree.vector_dist(r2, tree.r_p);
+    var p2 = tree.vector_dist(r1, tree.r_p);
+    var p3 = tree.vector_dist(tree.rstar(r1), tree.r_p);
+    var p4 = tree.vector_dist(tree.rstar(r2), tree.r_p);
+
+    return Math.pow((1/Math.abs(p1) - 1/Math.abs(p2) + 1/Math.abs(p3) - 1/Math.abs(p4)), 2)
+               / (3 - 1/tree.pin_to_img);
   };
 
   for (var i = 0; i < tree.xmax; ++i)
   {
     for (var j = 0; j < tree.ymax; ++j)
     {
-      // calc G for tree.points[i][j].x_seg
-      // calc G for tree.points[i][j].y_seg
-      //
       // calc F for tree.points[i][j].x_seg
       var r1 = [i, j];
       var r2 = [i+1, j];
       tree.points[i][j].x_seg.F = tree.calcF(r1, r2);
+      // calc G for tree.points[i][j].x_seg
+      //tree.points[i][j].x_seg.G = tree.calcG(r1, r2);
       
       // calc F for tree.points[i][j].y_seg
       var r2 = [i, j+1];
       tree.points[i][j].y_seg.F = tree.calcF(r1, r2);
+      // calc G for tree.points[i][j].y_seg
+      //tree.points[i][j].y_seg.G = tree.calcG(r1, r2);
     }
   }
 
