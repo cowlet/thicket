@@ -144,15 +144,15 @@ test("createTree with tree2", function() {
 
   deepEqual(tree.r_p, [13, 0], "pin location");
   deepEqual(tree.r_p_star, [13, 30], "pin img location");
-  deepEqual(tree.pin_to_img, 0.0015, "pin to pin image distance");
-  deepEqual(closeEnough(tree.Qu_app, -4.020e-17, 1e-20), true, "Qu_app is "+tree.Qu_app);
+  deepEqual(tree.pin_to_img, 30, "pin to pin image distance");
+  deepEqual(closeEnough(tree.Qu_app, 8.99e-15, 1e-17), true, "Qu_app is "+tree.Qu_app);
 
-  deepEqual(tree.dist_to_pin([13, 1]), h, "distance to pin");
-  deepEqual(tree.dist_to_pin([12, 0]), h, "distance to pin");
-  deepEqual(tree.dist_to_pin([10, 4]), 5*h, "distance to pin");
+  deepEqual(tree.dist_to_pin([13, 1]), 1, "distance to pin");
+  deepEqual(tree.dist_to_pin([12, 0]), 1, "distance to pin");
+  deepEqual(tree.dist_to_pin([10, 4]), 5, "distance to pin");
 
-  deepEqual(closeEnough(tree.dist_to_img([13, 1]), 29*h, 0.0001), true, "distance to img");
-  deepEqual(closeEnough(tree.dist_to_img([10, 4]), (Math.sqrt(745)*h), 0.0001), true, "distance to img");
+  deepEqual(tree.dist_to_img([13, 1]), 29, "distance to img");
+  deepEqual(closeEnough(tree.dist_to_img([10, 4]), Math.sqrt(685), 0.01), true, "distance to img is "+tree.dist_to_img([10, 4]));
 });
 
 test("complex tree calculations", function() {
@@ -164,55 +164,107 @@ test("complex tree calculations", function() {
   // y segment from pin
   var r1 = [13, 0];
   var r2 = [13, 1];
-  deepEqual(closeEnough(Math.abs(tree.vector_dist(tree.rstar(r1), r2)), 29*h, 0.0001), true, "vector_dist");
-  deepEqual(Math.abs(tree.vector_dist(tree.rstar(r2), r2)), 28*h, "vector_dist");
-  deepEqual(Math.abs(tree.vector_dist(tree.rstar(r1), r1)), 30*h, "vector_dist");
-  deepEqual(closeEnough(Math.abs(tree.vector_dist(tree.rstar(r2), r1)), 29*h, 0.0001), true, "vector_dist");
-  // h is now on the bottom of the equation
-  deepEqual(closeEnough(tree.calcF(r1, r2), -8.21e-5/h, 0.0001), true, "calcF gives "+tree.calcF(r1, r2));
+  deepEqual(Math.abs(tree.coord_dist(tree.rstar(r1), r2)), 29, "coord_dist");
+  deepEqual(Math.abs(tree.coord_dist(tree.rstar(r2), r2)), 28, "coord_dist");
+  deepEqual(Math.abs(tree.coord_dist(tree.rstar(r1), r1)), 30, "coord_dist");
+  deepEqual(Math.abs(tree.coord_dist(tree.rstar(r2), r1)), 29, "coord_dist");
+  deepEqual(closeEnough(tree.calcF(r1, r2), -8.21e-5, 1e-7), true, "calcF gives "+tree.calcF(r1, r2));
 
   // x segment
   var r1 = [13, 1];
   var r2 = [14, 1];
-  deepEqual(closeEnough(Math.abs(tree.vector_dist(tree.rstar(r1), r2)), 28.02*h, 1e-6), true, "vector_dist gives "+tree.vector_dist(tree.rstar(r1), r2));
-  deepEqual(Math.abs(tree.vector_dist(tree.rstar(r2), r2)), 28*h, "vector_dist gives "+tree.vector_dist(tree.rstar(r2), r2));
-  deepEqual(Math.abs(tree.vector_dist(tree.rstar(r1), r1)), 28*h, "vector_dist gives "+tree.vector_dist(tree.rstar(r1), r1));
-  deepEqual(closeEnough(Math.abs(tree.vector_dist(tree.rstar(r2), r1)), 28.02*h, 1e-6), true, "vector_dist gives "+tree.vector_dist(tree.rstar(r2), r1));
+  deepEqual(closeEnough(Math.abs(tree.coord_dist(tree.rstar(r1), r2)), 28.02, 0.01), true, "coord_dist gives "+tree.coord_dist(tree.rstar(r1), r2));
+  deepEqual(Math.abs(tree.coord_dist(tree.rstar(r2), r2)), 28, "coord_dist gives "+tree.coord_dist(tree.rstar(r2), r2));
+  deepEqual(Math.abs(tree.coord_dist(tree.rstar(r1), r1)), 28, "coord_dist gives "+tree.coord_dist(tree.rstar(r1), r1));
+  deepEqual(closeEnough(Math.abs(tree.coord_dist(tree.rstar(r2), r1)), 28.02, 0.01), true, "coord_dist gives "+tree.coord_dist(tree.rstar(r2), r1));
   // h is now on the bottom of the equation
-  deepEqual(closeEnough(tree.calcF(r1, r2), -5.098e-5/h, 0.001), true, "calcF gives "+tree.calcF(r1, r2));
+  deepEqual(closeEnough(tree.calcF(r1, r2), -5.098e-5, 1e-8), true, "calcF gives "+tree.calcF(r1, r2));
 
 
   // calculate G factor - four cases: x_seg and y_seg, from pin and not from pin
   // y segment from pin
   var r1 = [13, 0];
   var r2 = [13, 1];
-  deepEqual(closeEnough(Math.abs(tree.vector_dist(tree.rstar(r1), tree.r_p)), 30*h, 0.0001), true, "vector_dist");
-  deepEqual(closeEnough(Math.abs(tree.vector_dist(tree.rstar(r2), tree.r_p)), 29*h, 0.0001), true, "vector_dist");
-  deepEqual(closeEnough(tree.calcG(r1, r2), -0.94087, 0.0001), true, "calcG gives "+tree.calcG(r1, r2));
+  deepEqual(Math.abs(tree.coord_dist(tree.rstar(r1), tree.r_p)), 30, "coord_dist");
+  deepEqual(Math.abs(tree.coord_dist(tree.rstar(r2), tree.r_p)), 29, "coord_dist");
+  deepEqual(closeEnough(tree.calcG(r1, r2), 1.3499, 0.0001), true, "calcG gives "+tree.calcG(r1, r2));
 
   // y segment not from pin
   var r1 = [13, 1];
   var r2 = [13, 2];
-  deepEqual(closeEnough(Math.abs(tree.vector_dist(r2, tree.r_p)), 2*h, 1e-5), true, "vector_dist");
-  deepEqual(closeEnough(Math.abs(tree.vector_dist(r1, tree.r_p)), h, 1e-5), true, "vector_dist");
-  deepEqual(closeEnough(Math.abs(tree.vector_dist(tree.rstar(r1), tree.r_p)), 29*h, 1e-5), true, "vector_dist");
-  deepEqual(closeEnough(Math.abs(tree.vector_dist(tree.rstar(r2), tree.r_p)), 28*h, 0.0001), true, "vector_dist");
-  deepEqual(closeEnough(tree.calcG(r1, r2), -1.5142e5, 1e2), true, "calcG gives "+tree.calcG(r1, r2));
+  deepEqual(Math.abs(tree.coord_dist(r2, tree.r_p)), 2, "coord_dist");
+  deepEqual(Math.abs(tree.coord_dist(r1, tree.r_p)), 1, "coord_dist");
+  deepEqual(Math.abs(tree.coord_dist(tree.rstar(r1), tree.r_p)), 29, "coord_dist");
+  deepEqual(Math.abs(tree.coord_dist(tree.rstar(r2), tree.r_p)), 28, "coord_dist");
+  deepEqual(closeEnough(tree.calcG(r1, r2), 0.08469, 1e-5), true, "calcG gives "+tree.calcG(r1, r2));
 
   // x segment from pin
   var r1 = [13, 0];
   var r2 = [12, 0];
-  deepEqual(closeEnough(Math.abs(tree.vector_dist(tree.rstar(r1), tree.r_p)), 30*h, 0.0001), true, "vector_dist");
-  deepEqual(closeEnough(Math.abs(tree.vector_dist(tree.rstar(r2), tree.r_p)), 30.02*h, 0.0001), true, "vector_dist");
-  deepEqual(closeEnough(tree.calcG(r1, r2), -3.647e-3, 1e-6), true, "calcG gives "+tree.calcG(r1, r2));
+  deepEqual(Math.abs(tree.coord_dist(tree.rstar(r1), tree.r_p)), 30, "coord_dist");
+  deepEqual(closeEnough(Math.abs(tree.coord_dist(tree.rstar(r2), tree.r_p)), 30.02, 0.01), true, "coord_dist");
+  deepEqual(closeEnough(tree.calcG(r1, r2), 1.3483, 0.0001), true, "calcG gives "+tree.calcG(r1, r2));
 
   // x segment not from pin
   var r1 = [12, 1];
   var r2 = [13, 1];
-  deepEqual(closeEnough(Math.abs(tree.vector_dist(r2, tree.r_p)), h, 1e-5), true, "vector_dist");
-  deepEqual(closeEnough(Math.abs(tree.vector_dist(r1, tree.r_p)), 1.414*h, 1e-5), true, "vector_dist");
-  deepEqual(closeEnough(Math.abs(tree.vector_dist(tree.rstar(r1), tree.r_p)), 29.02*h, 1e-5), true, "vector_dist");
-  deepEqual(closeEnough(Math.abs(tree.vector_dist(tree.rstar(r2), tree.r_p)), 29*h, 0.0001), true, "vector_dist");
-  deepEqual(closeEnough(tree.calcG(r1, r2), -5.1694e4, 1e2), true, "calcG gives "+tree.calcG(r1, r2));
+  deepEqual(Math.abs(tree.coord_dist(r2, tree.r_p)), 1, "coord_dist");
+  deepEqual(closeEnough(Math.abs(tree.coord_dist(r1, tree.r_p)), 1.414, 1e-3), true, "coord_dist");
+  deepEqual(closeEnough(Math.abs(tree.coord_dist(tree.rstar(r1), tree.r_p)), 29.02, 1e-2), true, "coord_dist");
+  deepEqual(Math.abs(tree.coord_dist(tree.rstar(r2), tree.r_p)), 29, "coord_dist");
+  deepEqual(closeEnough(tree.calcG(r1, r2), 0.02889, 1e-5), true, "calcG gives "+tree.calcG(r1, r2));
 });
 
+test("VQ_r", function() {
+  expect(6);
+
+  var tree = createTree(tree2);
+  var i = 14;
+  var j = 1;
+  var r = [i, j];
+  tree.points[i][j].treePoint = true;
+
+  // check first what Vu_app is
+  deepEqual(closeEnough(tree.points[i][j].Vu_app, 0.2268, 0.0001), true, "Vu_app is "+tree.points[i][j].Vu_app);
+
+  // initially, all Qs are empty
+  deepEqual(VQ_r(tree, r), 0, "initial VQ_r is zero");
+  deepEqual(VQ_r(tree, tree.r_p), 0, "initial VQ_r(pin) is zero");
+
+  // add a discharge dipole
+  tree.points[i][j].V_r_t = 3277.38;
+  tree.points[i][j+1].V_r_t = 1066.64;
+  var V_seg = tree.points[i][j].V_r_t - tree.points[i][j+1].V_r_t;
+  var deltaV = V_seg - (Voff+Verr);
+  var aPoint = {i: i, j: j, dir: "y", V_seg: V_seg};
+
+  var Qd = dischargeDipole(tree, aPoint, deltaV);
+  deepEqual(closeEnough(Qd, 4.647e-12, 1e-15), true, "Qd is "+Qd);
+
+  // this way round definitely reduces the voltage across the segment
+  tree.points[i][j].Qs.push(-Qd);
+  tree.points[i][j+1].Qs.push(Qd);
+  // empirically defined, not calculated
+  deepEqual(closeEnough(VQ_r(tree, r), -522.53, 0.01), true, "VQ_r is "+VQ_r(tree, r));
+
+  // now call updatePointPotentials and check
+  var V = tree.points[i][j].V_r_t / tree.points[i][j].Vu_app;
+  updatePointPotentials(tree, V); 
+  deepEqual(closeEnough(tree.points[i][j].V_r_t, 2754.85, 0.01), true, "V_r_t after dipole = "+tree.points[i][j].V_r_t);
+});
+
+test("model simulation", function() {
+  expect(0);
+
+  var tree = createTree(tree2);
+
+  // It takes 133 time steps before any V_seg goes high enough
+  for (var a = 0; a < 3; ++a)
+  //for (var a = 0; a < 134; ++a)
+  {
+    console.log(a);
+    modelTick(tree);
+  }
+
+  // Test dipole assignment
+});

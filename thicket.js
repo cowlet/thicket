@@ -191,7 +191,8 @@
       {
         for (var j = 1; j < tree.ymax; ++j) // start from 1
         {
-          var Vint = Math.floor(Math.abs(tree.points[i][j].Vu_app));
+          // Scale the Vu_app value into an integer equivalent
+          var Vint = Math.floor(100*Math.abs(tree.points[i][j].Vu_app));
           var color = voltages[Math.min(voltages.length - 1, Vint)];
           //console.log("Vint = " + Vint + ", voltages[Vint] = " + color);
 
