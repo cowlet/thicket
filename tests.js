@@ -142,16 +142,42 @@ test("createTree with tree2", function() {
   deepEqual(tree.ymax, 15, "y dimension should be 15");
   deepEqual(tree.zmax, 1, "z dimension should be 1");
 
-  deepEqual(tree.r_p, [13, 0], "pin location not as expected");
-  deepEqual(tree.r_p_star, [13, 30], "pin img location not as expected");
-  deepEqual(tree.pin_to_img, 0.0015, "pin to pin image distance not as calculated");
+  deepEqual(tree.r_p, [13, 0], "pin location");
+  deepEqual(tree.r_p_star, [13, 30], "pin img location");
+  deepEqual(tree.pin_to_img, 0.0015, "pin to pin image distance");
   deepEqual(closeEnough(tree.Qu_app, -4.020e-17, 1e-20), true, "Qu_app is "+tree.Qu_app);
 
-  deepEqual(tree.dist_to_pin([13, 1]), h, "distance to pin not as calculated");
-  deepEqual(tree.dist_to_pin([12, 0]), h, "distance to pin not as calculated");
-  deepEqual(tree.dist_to_pin([10, 4]), 5*h, "distance to pin not as calculated");
+  deepEqual(tree.dist_to_pin([13, 1]), h, "distance to pin");
+  deepEqual(tree.dist_to_pin([12, 0]), h, "distance to pin");
+  deepEqual(tree.dist_to_pin([10, 4]), 5*h, "distance to pin");
 
-  deepEqual(tree.dist_to_img([13, 1]), 29*h, "distance to img not as calculated");
-  deepEqual(closeEnough(tree.dist_to_img([10, 4]), (Math.sqrt(745)*h), 0.0001), true, "distance to img wrong");
+  deepEqual(tree.dist_to_img([13, 1]), 29*h, "distance to img");
+  deepEqual(closeEnough(tree.dist_to_img([10, 4]), (Math.sqrt(745)*h), 0.0001), true, "distance to img");
+});
+
+test("complex tree calculations", function() {
+  expect(10);
+
+  var tree = createTree(tree2);
+
+  // y segment from pin
+  var r1 = [13, 0];
+  var r2 = [13, 1];
+  deepEqual(Math.abs(tree.vector_dist(tree.rstar(r1), r2)), 29*h, "vector_dist");
+  deepEqual(Math.abs(tree.vector_dist(tree.rstar(r2), r2)), 28*h, "vector_dist");
+  deepEqual(Math.abs(tree.vector_dist(tree.rstar(r1), r1)), 30*h, "vector_dist");
+  deepEqual(Math.abs(tree.vector_dist(tree.rstar(r2), r1)), 29*h, "vector_dist");
+  // h is now on the bottom of the equation
+  deepEqual(closeEnough(tree.calcF(r1, r2), -8.21e-5/h, 0.0001), true, "calcF gives "+tree.calcF(r1, r2));
+
+  // x segment
+  var r1 = [13, 1];
+  var r2 = [14, 1];
+  deepEqual(closeEnough(Math.abs(tree.vector_dist(tree.rstar(r1), r2)), 28.02*h, 1e-6), true, "vector_dist gives "+tree.vector_dist(tree.rstar(r1), r2));
+  deepEqual(Math.abs(tree.vector_dist(tree.rstar(r2), r2)), 28*h, "vector_dist gives "+tree.vector_dist(tree.rstar(r2), r2));
+  deepEqual(Math.abs(tree.vector_dist(tree.rstar(r1), r1)), 28*h, "vector_dist gives "+tree.vector_dist(tree.rstar(r1), r1));
+  deepEqual(closeEnough(Math.abs(tree.vector_dist(tree.rstar(r2), r1)), 28.02*h, 1e-6), true, "vector_dist gives "+tree.vector_dist(tree.rstar(r2), r1));
+  // h is now on the bottom of the equation
+  deepEqual(closeEnough(tree.calcF(r1, r2), -5.098e-5/h, 0.001), true, "calcF gives "+tree.calcF(r1, r2));
 });
 

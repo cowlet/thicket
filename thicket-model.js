@@ -145,23 +145,31 @@ var createTree = function(treePic) {
     xmax: points.length,
   };
 
+  tree.rstar = function(r) {
+    // image coords for r coords [x,y]
+    // x is the same, y depends on height of tree
+    return [r[0], 2*tree.ymax-r[1]];
+  };
+
   tree.r_p = findPin(points); // [x, y] coords of the pin
-  tree.r_p_star = [tree.r_p[0], 2*tree.ymax-tree.r_p[1]];
+  tree.r_p_star = tree.rstar(tree.r_p); 
   tree.pin_to_img = 2 * tree.ymax * h;
   tree.Qu_app =  4 * Math.PI * eps_0 * eps_r * h / (3 - 1/tree.pin_to_img);
 
+  tree.vector_dist = function(r1, r2) {
+    var x = h * (r1[0] - r2[0]);
+    var y = h * (r1[1] - r2[1]);
+    return Math.sqrt(x*x + y*y);
+  };
+
   tree.dist_to_pin = function (r) {
     // vector distance to r_p
-    var x = h * (r[0] - tree.r_p[0]);
-    var y = h * (r[1] - tree.r_p[1]);
-    return Math.sqrt(x*x + y*y);
+    return tree.vector_dist(r, tree.r_p);
   };
 
   tree.dist_to_img = function (r) {
     // vector distance to r_p_star
-    var x = h * (r[0] - tree.r_p_star[0]);
-    var y = h * (r[1] - tree.r_p_star[1]);
-    return Math.sqrt(x*x + y*y);
+    return tree.vector_dist(r, tree.r_p_star);
   };
 
   tree.Vu_app = function(r) {
@@ -174,6 +182,35 @@ var createTree = function(treePic) {
     for (var j = 0; j < tree.ymax; ++j)
     {
       tree.points[i][j].Vu_app = tree.Vu_app([i, j]);
+    }
+  }
+
+  // Now the correction factors F and G
+  tree.calcF = function(r1, r2) {
+    // Due to Javascript, need to round each part to 4 s.f.
+    var p1 = tree.vector_dist(tree.rstar(r1), r2).toPrecision(4);
+    var p2 = tree.vector_dist(tree.rstar(r2), r2).toPrecision(4);
+    var p3 = tree.vector_dist(tree.rstar(r1), r1).toPrecision(4);
+    var p4 = tree.vector_dist(tree.rstar(r2), r1).toPrecision(4);
+
+    return (1/Math.abs(p1) - 1/Math.abs(p2) - 1/Math.abs(p3) + 1/Math.abs(p4));
+  };
+
+  for (var i = 0; i < tree.xmax; ++i)
+  {
+    for (var j = 0; j < tree.ymax; ++j)
+    {
+      // calc G for tree.points[i][j].x_seg
+      // calc G for tree.points[i][j].y_seg
+      //
+      // calc F for tree.points[i][j].x_seg
+      var r1 = [i, j];
+      var r2 = [i+1, j];
+      tree.points[i][j].x_seg.F = tree.calcF(r1, r2);
+      
+      // calc F for tree.points[i][j].y_seg
+      var r2 = [i, j+1];
+      tree.points[i][j].y_seg.F = tree.calcF(r1, r2);
     }
   }
 
@@ -197,17 +234,59 @@ var modelTick = function(tree) {
   {
     for (var j = 0; j < tree.ymax; ++j)
     {
+      if (tree.points[i][j].treePoint)
+      {
+        // calc V(r, t) using equation 5
+        //var V_r_t = V * tree.points[i][j].Vu_app - VQ * tree.points[i][j].Vu_app + VQ_r;
+        // VQ(t) and VQ(r, t) ?
+        // To begin with, no dipoles have been added and the V is only due to applied V
+        tree.points[i][j].V_r_t = V * tree.points[i][j].Vu_app;
+      }
+    }
+  }
+
+  // Use potential to calculate potential difference along each segment
+  for (var i = 0; i < tree.xmax; ++i)
+  {
+    for (var j = 0; j < tree.ymax; ++j)
+    {
       if (tree.points[i][j].x_seg.r > 0)
       {
         // calc V_seg
+        // Get V(r, t) of two ends, and subtract?
+        // x seg, so the adjacent point is [i+1][j]
+        var V_seg = tree.points[i][j].V_r_t - tree.points[i+1][j].V_r_t;
+        //console.log("xseg for [" + i + "," + j + "] gives V_seg = " + V_seg);
+        if (Math.abs(V_seg) > Von)
+        {
+          //console.log("V_seg " + V_seg + " is above Von!");
+          // Add a discharge dipole
+          var deltaV = Von - Voff;
+
+          var F = tree.points[i][j].x_seg.F;
+          var G = tree.points[i][j].x_seg.G;
+          // Qd = equation 9
+          var Qd = deltaV * 4 * Math.PI * eps_0 * eps_r * h / (4-F+G);
+
+          // add +Qd to one side and -Qd to the other
+        }
       }
 
       if (tree.points[i][j].y_seg.r > 0)
       {
         // calc V_seg
+        // y seg, so the adjacent point is [i][j+1]
+        var V_seg = Math.abs(tree.points[i][j].V_r_t - tree.points[i][j+1].V_r_t);
+        //console.log("yseg for [" + i + "," + j + "] gives V_seg = " + V_seg);
+        if (V_seg > Von)
+        {
+          //console.log("V_seg " + V_seg + " is above Von!");
+          // Add a discharge dipole
+        }
       }
     }
   }
+
 
   return [phase, V];
 };
