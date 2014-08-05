@@ -214,8 +214,7 @@ var createTree = function(treePic) {
     var p3 = tree.vector_dist(tree.rstar(r1), tree.r_p);
     var p4 = tree.vector_dist(tree.rstar(r2), tree.r_p);
 
-    return Math.pow((1/Math.abs(p1) - 1/Math.abs(p2) + 1/Math.abs(p3) - 1/Math.abs(p4)), 2)
-               / (3 - 1/tree.pin_to_img);
+    return Math.pow((1/Math.abs(p1) - 1/Math.abs(p2) + 1/Math.abs(p3) - 1/Math.abs(p4)), 2) / (3 - 1/tree.pin_to_img);
   };
 
   for (var i = 0; i < tree.xmax; ++i)
@@ -227,13 +226,13 @@ var createTree = function(treePic) {
       var r2 = [i+1, j];
       tree.points[i][j].x_seg.F = tree.calcF(r1, r2);
       // calc G for tree.points[i][j].x_seg
-      //tree.points[i][j].x_seg.G = tree.calcG(r1, r2);
+      tree.points[i][j].x_seg.G = tree.calcG(r1, r2);
       
       // calc F for tree.points[i][j].y_seg
       var r2 = [i, j+1];
       tree.points[i][j].y_seg.F = tree.calcF(r1, r2);
       // calc G for tree.points[i][j].y_seg
-      //tree.points[i][j].y_seg.G = tree.calcG(r1, r2);
+      tree.points[i][j].y_seg.G = tree.calcG(r1, r2);
     }
   }
 

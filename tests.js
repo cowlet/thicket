@@ -156,10 +156,11 @@ test("createTree with tree2", function() {
 });
 
 test("complex tree calculations", function() {
-  expect(16);
+  expect(26);
 
   var tree = createTree(tree2);
 
+  // calculate F factor - two cases: x_seg and y_seg
   // y segment from pin
   var r1 = [13, 0];
   var r2 = [13, 1];
@@ -181,6 +182,7 @@ test("complex tree calculations", function() {
   deepEqual(closeEnough(tree.calcF(r1, r2), -5.098e-5/h, 0.001), true, "calcF gives "+tree.calcF(r1, r2));
 
 
+  // calculate G factor - four cases: x_seg and y_seg, from pin and not from pin
   // y segment from pin
   var r1 = [13, 0];
   var r2 = [13, 1];
@@ -188,8 +190,15 @@ test("complex tree calculations", function() {
   deepEqual(closeEnough(Math.abs(tree.vector_dist(tree.rstar(r2), tree.r_p)), 29*h, 0.0001), true, "vector_dist");
   deepEqual(closeEnough(tree.calcG(r1, r2), -0.94087, 0.0001), true, "calcG gives "+tree.calcG(r1, r2));
 
-
   // y segment not from pin
+  var r1 = [13, 1];
+  var r2 = [13, 2];
+  deepEqual(closeEnough(Math.abs(tree.vector_dist(r2, tree.r_p)), 2*h, 1e-5), true, "vector_dist");
+  deepEqual(closeEnough(Math.abs(tree.vector_dist(r1, tree.r_p)), h, 1e-5), true, "vector_dist");
+  deepEqual(closeEnough(Math.abs(tree.vector_dist(tree.rstar(r1), tree.r_p)), 29*h, 1e-5), true, "vector_dist");
+  deepEqual(closeEnough(Math.abs(tree.vector_dist(tree.rstar(r2), tree.r_p)), 28*h, 0.0001), true, "vector_dist");
+  deepEqual(closeEnough(tree.calcG(r1, r2), -1.5142e5, 1e2), true, "calcG gives "+tree.calcG(r1, r2));
+
   // x segment from pin
   var r1 = [13, 0];
   var r2 = [12, 0];
@@ -198,13 +207,12 @@ test("complex tree calculations", function() {
   deepEqual(closeEnough(tree.calcG(r1, r2), -3.647e-3, 1e-6), true, "calcG gives "+tree.calcG(r1, r2));
 
   // x segment not from pin
-  var p1 = tree.vector_dist(tree.rstar(r1), tree.r_p);
-  var p2 = tree.vector_dist(tree.rstar(r2), tree.r_p);
-
-  var nom = Math.pow((-2 + 1/Math.abs(p1) - 1/Math.abs(p2)), 2);
-  var denom = (3 - 1/tree.pin_to_img);
-  //console.log(p1 + ", " + p2 + ", " + nom + "/" + denom + "=" + nom/denom);
-
-
+  var r1 = [12, 1];
+  var r2 = [13, 1];
+  deepEqual(closeEnough(Math.abs(tree.vector_dist(r2, tree.r_p)), h, 1e-5), true, "vector_dist");
+  deepEqual(closeEnough(Math.abs(tree.vector_dist(r1, tree.r_p)), 1.414*h, 1e-5), true, "vector_dist");
+  deepEqual(closeEnough(Math.abs(tree.vector_dist(tree.rstar(r1), tree.r_p)), 29.02*h, 1e-5), true, "vector_dist");
+  deepEqual(closeEnough(Math.abs(tree.vector_dist(tree.rstar(r2), tree.r_p)), 29*h, 0.0001), true, "vector_dist");
+  deepEqual(closeEnough(tree.calcG(r1, r2), -5.1694e4, 1e2), true, "calcG gives "+tree.calcG(r1, r2));
 });
 
