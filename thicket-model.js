@@ -47,9 +47,7 @@ var segInit = function() {
   var seg = {
     r: 0,
 
-    Von_seg: function() {
-      return Von * (1 - (r - R)/2*h);
-    },
+    Von_seg: Von,
   };
 
   return seg;
@@ -267,8 +265,8 @@ var VQ_r = function(tree, point) {
         // the point
         VQ_r += tree.points[i][j].Qs.reduce(function(a, b) { return a+b; }, 0) / (4 * Math.PI * eps_0 * eps_r * tree.coord_dist(point, [i,j]));
       }
-      // its image
-      VQ_r += tree.points[i][j].Qs.reduce(function(a, b) { return a+b; }, 0) / (4 * Math.PI * eps_0 * eps_r * tree.coord_dist(point, tree.rstar([i,j])));
+      // its image, which has equal and opposite Qs
+      VQ_r += (0-tree.points[i][j].Qs.reduce(function(a, b) { return a+b; }, 0)) / (4 * Math.PI * eps_0 * eps_r * tree.coord_dist(point, tree.rstar([i,j])));
       //console.log(i + "," + j + " = " + VQ_r);
     }
   }
@@ -302,7 +300,7 @@ var findAvalanchePoint = function(tree) {
         // To calc V_seg, get V(r, t) of two ends, and subtract.
         // x direction, so the adjacent point is [i+1][j]
         var V_seg = tree.points[i][j].V_r_t - tree.points[i+1][j].V_r_t;
-        if (Math.abs(V_seg) > Von)
+        if (Math.abs(V_seg) > tree.points[i][j].x_seg.Von_seg)
         {
           candidates.push({i: i, j: j, dir: "x", V_seg: V_seg});
         }
@@ -310,9 +308,11 @@ var findAvalanchePoint = function(tree) {
 
       if (tree.points[i][j].y_seg.r > 0)
       {
+        // special case for the pin segment
+        if (tree.points[i][j].pin) { continue; }
         // y direction, so the adjacent point is [i][j+1]
         var V_seg = tree.points[i][j].V_r_t - tree.points[i][j+1].V_r_t;
-        if (Math.abs(V_seg) > Von)
+        if (Math.abs(V_seg) > tree.points[i][j].y_seg.Von_seg)
         {
           candidates.push({i: i, j: j, dir: "y", V_seg: V_seg});
         }
@@ -329,7 +329,7 @@ var findAvalanchePoint = function(tree) {
     return 0; 
   })[0];
 
-  console.log(max_seg);
+  //console.log(max_seg);
   return max_seg;
 };
 
@@ -356,8 +356,8 @@ var modelTick = function(tree) {
   // Update excitation voltage
   var V = V0 * Math.sin(degToRad(phase));
 
-  //while (1)
-  for(var a = 0; a < 3; ++a)
+  while (1)
+  //for(var a = 0; a < 3; ++a)
   {
     // Calculate electric potential in tree
     updatePointPotentials(tree, V);
@@ -371,15 +371,11 @@ var modelTick = function(tree) {
       break;
     }
 
-    console.log("Here comes the point which triggered an avalanche:");
     console.log(aPoint);
-    console.log(tree.points[aPoint.i][aPoint.j].V_r_t);
-    console.log(tree.points[aPoint.i+1][aPoint.j].V_r_t);
-    console.log(tree.points[aPoint.i][aPoint.j+1].V_r_t);
-    console.log("End.");
+    console.log("Qs at [i][j] are: " + tree.points[aPoint.i][aPoint.j].Qs);
 
     // Add a discharge dipole at the trigger point
-    var deltaV = aPoint.V_seg - (Voff+Verr);
+    var deltaV = aPoint.V_seg - Voff;
     var Qd = dischargeDipole(tree, aPoint, deltaV);
 
     // Add +Qd/-Qd to left and right Qs 
@@ -390,15 +386,13 @@ var modelTick = function(tree) {
       {
         tree.points[aPoint.i][aPoint.j].Qs.push(-Qd);
         tree.points[aPoint.i+1][aPoint.j].Qs.push(Qd);
-
-        // now test if V has gone up or down
-        //var new_V_r_t = V * tree.points[aPoint.i][aPoint.j].Vu_app + VQ_r(tree, [aPoint.i, aPoint.j]);
-        //console.log(new_V_r_t);
+        tree.points[aPoint.i][aPoint.j].x_seg.Von_seg = (Voff+Verr);
       }
       else
       {
         tree.points[aPoint.i][aPoint.j].Qs.push(-Qd);
         tree.points[aPoint.i][aPoint.j+1].Qs.push(Qd);
+        tree.points[aPoint.i][aPoint.j].y_seg.Von_seg = (Voff+Verr);
       }
     }
     else
@@ -408,13 +402,14 @@ var modelTick = function(tree) {
       {
         tree.points[aPoint.i][aPoint.j].Qs.push(Qd);
         tree.points[aPoint.i+1][aPoint.j].Qs.push(-Qd);
+        tree.points[aPoint.i][aPoint.j].x_seg.Von_seg = (Voff+Verr);
       }
       else
       {
         tree.points[aPoint.i][aPoint.j].Qs.push(Qd);
         tree.points[aPoint.i][aPoint.j+1].Qs.push(-Qd);
+        tree.points[aPoint.i][aPoint.j].y_seg.Von_seg = (Voff+Verr);
       }
-
     }
   }
 
