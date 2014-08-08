@@ -396,6 +396,7 @@ var modelTick = function(tree) {
     var Qd = dischargeDipole(tree, aPoint, deltaV);
     dissipateEnergy(tree, aPoint, Qd);
 
+    // Add +Qd/-Qd to left and right Qs 
     if (aPoint.dir === "x")
     {
       // this point is higher potential than the neighbour
@@ -409,8 +410,6 @@ var modelTick = function(tree) {
       tree.points[aPoint.i][aPoint.j+1].Qs.push(Qd);
       tree.points[aPoint.i][aPoint.j].y_seg.Von_seg = (Voff+Verr);
     }
-
-    // Add +Qd/-Qd to left and right Qs 
   }
 
   // end of time step. sum all seg.energy
