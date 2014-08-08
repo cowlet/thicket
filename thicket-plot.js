@@ -42,9 +42,19 @@ var voltsToY = function(volts, plot) {
   return (xheight - volts*scale);
 };
 
+var energyToBarHeight = function(energy, plot) {
+  var scale = (plot.height/2 - indent) / 1e-8;
+  return (Math.abs(energy)*scale);
+};
+
 var plotColour = function(phase) {
   var colours = ["#625192", "#4a9470"];
   // complements are ["#d4c36a", "#d4856a"]
+  return colours[ (Math.floor(phase/360) % 2) ];
+};
+
+var pdColour = function(phase) {
+  var colours = ["#d4856a", "#d4c36a"];
   return colours[ (Math.floor(phase/360) % 2) ];
 };
 
@@ -56,4 +66,15 @@ var updatePlot = function(data, plot) {
 
   ctx.fillStyle = plotColour(data[0]);
   ctx.fillRect(degreesToX(data[0], plot), voltsToY(data[1], plot), 2, 2);
+
+  if (data[2] !== 0)
+  {
+    ctx.fillStyle = pdColour(data[0]);
+    var barHeight = energyToBarHeight(data[2], plot);
+    console.log("energy = " + data[2] + ", barHeight = " + barHeight);
+    if (data[2] > 0)
+      ctx.fillRect(degreesToX(data[0], plot), xheight-barHeight, 2, barHeight);
+    else
+      ctx.fillRect(degreesToX(data[0], plot), xheight, 2, barHeight);
+  }
 };

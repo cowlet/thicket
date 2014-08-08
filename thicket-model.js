@@ -48,6 +48,7 @@ var segInit = function() {
     r: 0,
 
     Von_seg: Von,
+    energy: 0,
   };
 
   return seg;
@@ -348,6 +349,19 @@ var dischargeDipole = function(tree, apoint, deltaV) {
   return deltaV * 4 * Math.PI * eps_0 * eps_r * h / (4-F+G);
 };
 
+var dissipateEnergy = function(tree, point, Qd) {
+  if (point.dir === "x")
+  {
+    var seg = tree.points[point.i][point.j].x_seg;
+  }
+  else
+  {
+    var seg = tree.points[point.i][point.j].y_seg;
+  }
+
+  seg.energy += Qd * (point.V_seg + Voff)/2;
+};
+
 
 var modelTick = function(tree) {
   // We want 3600 time steps per cycle, increasing by 0.1deg each step
@@ -357,7 +371,7 @@ var modelTick = function(tree) {
   var V = V0 * Math.sin(degToRad(phase));
 
   while (1)
-  //for(var a = 0; a < 3; ++a)
+  //for (var a = 0; a < 5; ++a)
   {
     // Calculate electric potential in tree
     updatePointPotentials(tree, V);
@@ -367,7 +381,7 @@ var modelTick = function(tree) {
     if (aPoint === undefined)
     {
       // End of PD at this time step
-      console.log("No V_seg above avalanche trigger; end of PD");
+      //console.log("No V_seg above avalanche trigger; end of PD");
       break;
     }
 
@@ -375,45 +389,57 @@ var modelTick = function(tree) {
     console.log("Qs at [i][j] are: " + tree.points[aPoint.i][aPoint.j].Qs);
 
     // Add a discharge dipole at the trigger point
-    var deltaV = aPoint.V_seg - Voff;
-    var Qd = dischargeDipole(tree, aPoint, deltaV);
-
-    // Add +Qd/-Qd to left and right Qs 
     if (aPoint.V_seg > 0)
+      var deltaV = aPoint.V_seg - Voff;
+    else
+      var deltaV = aPoint.V_seg + Voff;
+    var Qd = dischargeDipole(tree, aPoint, deltaV);
+    dissipateEnergy(tree, aPoint, Qd);
+
+    if (aPoint.dir === "x")
     {
-      // This point is higher potential than the neighbour
-      if (aPoint.dir === "x")
-      {
-        tree.points[aPoint.i][aPoint.j].Qs.push(-Qd);
-        tree.points[aPoint.i+1][aPoint.j].Qs.push(Qd);
-        tree.points[aPoint.i][aPoint.j].x_seg.Von_seg = (Voff+Verr);
-      }
-      else
-      {
-        tree.points[aPoint.i][aPoint.j].Qs.push(-Qd);
-        tree.points[aPoint.i][aPoint.j+1].Qs.push(Qd);
-        tree.points[aPoint.i][aPoint.j].y_seg.Von_seg = (Voff+Verr);
-      }
+      // this point is higher potential than the neighbour
+      tree.points[aPoint.i][aPoint.j].Qs.push(-Qd);
+      tree.points[aPoint.i+1][aPoint.j].Qs.push(Qd);
+      tree.points[aPoint.i][aPoint.j].x_seg.Von_seg = (Voff+Verr);
     }
     else
     {
-      // This point is lower potential than the neighbour
-      if (aPoint.dir === "x")
-      {
-        tree.points[aPoint.i][aPoint.j].Qs.push(Qd);
-        tree.points[aPoint.i+1][aPoint.j].Qs.push(-Qd);
-        tree.points[aPoint.i][aPoint.j].x_seg.Von_seg = (Voff+Verr);
-      }
-      else
-      {
-        tree.points[aPoint.i][aPoint.j].Qs.push(Qd);
-        tree.points[aPoint.i][aPoint.j+1].Qs.push(-Qd);
-        tree.points[aPoint.i][aPoint.j].y_seg.Von_seg = (Voff+Verr);
-      }
+      tree.points[aPoint.i][aPoint.j].Qs.push(-Qd);
+      tree.points[aPoint.i][aPoint.j+1].Qs.push(Qd);
+      tree.points[aPoint.i][aPoint.j].y_seg.Von_seg = (Voff+Verr);
+    }
+
+    // Add +Qd/-Qd to left and right Qs 
+  }
+
+  // end of time step. sum all seg.energy
+  var totalEnergy = 0;
+  for (var i = 0; i < tree.xmax; ++i)
+  {
+    for (var j = 0; j < tree.ymax; ++j)
+    {
+      totalEnergy += tree.points[i][j].x_seg.energy;
+      totalEnergy += tree.points[i][j].y_seg.energy;
+    }
+  }
+  if (totalEnergy > 0)
+    console.log("Total energy = " + totalEnergy);
+
+  // reset state
+  for (var i = 0; i < tree.xmax; ++i)
+  {
+    for (var j = 0; j < tree.ymax; ++j)
+    {
+      tree.points[i][j].x_seg.energy = 0;
+      tree.points[i][j].y_seg.energy = 0;
+
+      tree.points[i][j].x_seg.Von_seg = Von;
+      tree.points[i][j].y_seg.Von_seg = Von;
     }
   }
 
-  return [phase, V];
+  return [phase, V, totalEnergy];
 };
 
 

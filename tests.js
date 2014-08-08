@@ -269,7 +269,7 @@ test("VQ_r", function() {
 
 
 test("VQ_r 2", function() {
-  expect(11);
+  expect(12);
 
   var tree = createTree(tree2);
   var i = 13;
@@ -313,7 +313,58 @@ test("VQ_r 2", function() {
   deepEqual(closeEnough(tree.points[i][j+1].V_r_t, 2546.3, 0.1), true, "V_r_t after dipole = "+tree.points[i][j+1].V_r_t);
 
   //console.log("New V_seg = " + tree.points[i][j].V_r_t + " - " + tree.points[i][j+1].V_r_t + " = " + (tree.points[i][j].V_r_t-tree.points[i][j+1].V_r_t));
+  
+  // test energy calculation
+  dissipateEnergy(tree, aPoint, Qd); 
+  deepEqual(closeEnough(tree.points[i][j].y_seg.energy, 8.351e-9, 1e-12), true, "energy dissipated is "+tree.points[i][j].y_seg.energy);
 });
+
+
+test("VQ_r  with negative V(t)", function() {
+  expect(11);
+
+  var tree = createTree(tree2);
+  var i = 13;
+  var j = 1;
+  var r = [i, j];
+
+  // check first what Vu_app is
+  deepEqual(closeEnough(tree.points[i][j].Vu_app, 0.3255, 0.0001), true, "Vu_app is "+tree.points[i][j].Vu_app);
+  deepEqual(closeEnough(tree.points[i][j+1].Vu_app, 0.1565, 0.0001), true, "Vu_app is "+tree.points[i][j+1].Vu_app);
+
+  // initially, all Qs are empty
+  deepEqual(VQ_r(tree, r), 0, "initial VQ_r is zero");
+  deepEqual(VQ_r(tree, tree.r_p), 0, "initial VQ_r(pin) is zero");
+
+  // add a discharge dipole
+  var initV1 = -2774.28;
+  var initV2 = -571.628;
+  tree.points[i][j].V_r_t = initV1;
+  tree.points[i][j+1].V_r_t = initV2;
+  var V_seg = tree.points[i][j].V_r_t - tree.points[i][j+1].V_r_t;
+  var deltaV = V_seg + Voff; // negative V, so add Voff
+  var aPoint = {i: i, j: j, dir: "y", V_seg: V_seg};
+
+  deepEqual(closeEnough(deltaV, -702.65, 0.01), true, "check deltaV = "+deltaV);
+
+  var Qd = dischargeDipole(tree, aPoint, deltaV);
+  deepEqual(closeEnough(Qd, -4.589e-12, 1e-15), true, "Qd is "+Qd);
+
+  tree.points[i][j].Qs.push(-Qd);
+  tree.points[i][j+1].Qs.push(Qd);
+  // calculated these values
+  deepEqual(closeEnough(VQ_r(tree, r), 516.0, 0.1), true, "VQ_r is "+VQ_r(tree, r));
+  deepEqual(closeEnough(VQ_r(tree, [i, j+1]), -516.0, 0.1), true, "VQ_r opposite end is "+VQ_r(tree, [i, j+1]));
+  deepEqual(closeEnough(VQ_r(tree, tree.r_p), 4.311e-3, 1e-6), true, "VQ_r(pin) is "+VQ_r(tree, tree.r_p));
+
+  // now call updatePointPotentials and check
+  var V = V0 * Math.sin(degToRad(209.3));
+  updatePointPotentials(tree, V); 
+  deepEqual(closeEnough(tree.points[i][j].V_r_t, -1736, 1), true, "V_r_t after dipole = "+tree.points[i][j].V_r_t);
+
+  deepEqual(closeEnough(tree.points[i][j+1].V_r_t, -1599, 1), true, "V_r_t after dipole = "+tree.points[i][j+1].V_r_t);
+});
+
 
 
 
@@ -324,9 +375,12 @@ test("model simulation", function() {
   var tree = createTree(tree2);
 
   // It takes 670 time steps before any V_seg goes high enough
+  // And 2093 before a negative V_seg goes above the threshold
   //for (var a = 0; a < 3; ++a)
-  for (var a = 0; a < 670; ++a)
+  //for (var a = 0; a < 670; ++a)
+  for (var a = 0; a < 2093; ++a)
   {
+    console.log(a);
     modelTick(tree);
   }
 
@@ -339,4 +393,9 @@ test("model simulation", function() {
 
   console.log("x Von_seg: " + tree.points[13][1].x_seg.Von_seg);
   console.log("y Von_seg: " + tree.points[13][1].y_seg.Von_seg);
+
+
+  // once it gets into the second half cycle, it seems the loop never exits
+  // wrong sign somewhere?
+  // try looping here for the full 3600 steps
 });
