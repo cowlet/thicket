@@ -11,6 +11,11 @@ var deltaP = 0.1;
 /* Case 1, tree 2 */
 var Von = 2200;
 var Voff = 1500;
+
+/* Case 3, tree 2 */
+//var Von = 800;
+//var Voff = 400;
+
 var Verr = 10;
 
 var eps_r = 4.8; // flexible epoxy resin
@@ -34,6 +39,54 @@ var tree2 = [
   "                              ",
   "                              "
 ];
+
+var tree2_full = [
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                    p                    ",
+  "                    |                    ",
+  "                    |                    ",
+  "                  /--/.                  ",
+  "                /-|  |                   ",
+  "               -| |  /--|                ",
+  "                | . /.  |                ",
+  "               /-|  |   /.               ",
+  "               . | /-|  .                ",
+  "                 . | |                   ",
+  "                   . |                   ",
+  "                     .                   ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         ",
+  "                                         "
+];
+
 
 /* Each point has a right and down component.
  * . : tree point only
@@ -62,6 +115,7 @@ var pointInit = function(pointChar) {
     y_seg: segInit(),
     meshes: [],
     Qs: [],
+    Vu_app: 0,
   };
 
   if (pointChar !== " ")
@@ -151,16 +205,17 @@ var createTree = function(treePic) {
     return [r[0], 2*tree.ymax-r[1]];
   };
 
-  tree.r_p = findPin(points); // [x, y] coords of the pin
-  tree.r_p_star = tree.rstar(tree.r_p); 
-  tree.pin_to_img = 2 * tree.ymax;
-  tree.Qu_app =  4 * Math.PI * eps_0 * eps_r * h / (3 - 1/tree.pin_to_img);
 
   tree.coord_dist = function(r1, r2) {
     var x = r1[0] - r2[0];
     var y = r1[1] - r2[1];
     return parseFloat(Math.sqrt(x*x + y*y).toPrecision(4));
   };
+
+  tree.r_p = findPin(points); // [x, y] coords of the pin
+  tree.r_p_star = tree.rstar(tree.r_p);
+  tree.pin_to_img = tree.coord_dist(tree.r_p, tree.r_p_star);
+  tree.Qu_app =  4 * Math.PI * eps_0 * eps_r * h / (3 - 1/tree.pin_to_img);
 
   tree.dist_to_pin = function (r) {
     // vector distance to r_p in coordinate space
@@ -250,31 +305,39 @@ var degToRad = function(deg) {
 };
 
 var VQ_r = function(tree, point) {
-  var VQ_r = 0;
+  var result = 0;
   // for all points in tree, and their image
   for (var i = 0; i < tree.xmax; ++i)
   {
     for(var j = 0; j < tree.ymax; ++j)
     {
+      var denom = 4 * Math.PI * eps_0 * eps_r;
+      var sum = 0;
+      var Qs = tree.points[i][j].Qs;
+      for (var k = 0; k < Qs.length; k++) {
+        sum += Qs[k];
+      }
+
       if (point[0] === i && point[1] === j)
       {
         // the point
-        VQ_r += (3 * tree.points[i][j].Qs.reduce(function(a, b) { return a+b; }, 0)) / (4 * Math.PI * eps_0 * eps_r * h);
+        result += (3 * sum) / (denom * h);
       }
       else
       {
         // the point
-        VQ_r += tree.points[i][j].Qs.reduce(function(a, b) { return a+b; }, 0) / (4 * Math.PI * eps_0 * eps_r * tree.coord_dist(point, [i,j]));
+        result += sum / (denom * Math.abs(tree.coord_dist(point, [i,j])));
       }
       // its image, which has equal and opposite Qs
-      VQ_r += (0-tree.points[i][j].Qs.reduce(function(a, b) { return a+b; }, 0)) / (4 * Math.PI * eps_0 * eps_r * tree.coord_dist(point, tree.rstar([i,j])));
-      //console.log(i + "," + j + " = " + VQ_r);
+      result += (0-sum) / (denom * Math.abs(tree.coord_dist(point, tree.rstar([i,j]))));
+      //console.log(i + "," + j + " = " + result);
     }
   }
-  return VQ_r;
+  return result;
 };
 
 var updatePointPotentials = function(tree, V) {
+  var VQ_r_p = VQ_r(tree, tree.r_p);
   for (var i = 0; i < tree.xmax; ++i)
   {
     for (var j = 0; j < tree.ymax; ++j)
@@ -282,7 +345,7 @@ var updatePointPotentials = function(tree, V) {
       if (tree.points[i][j].treePoint)
       {
         // calc V(r, t) using equation 5
-        tree.points[i][j].V_r_t = V * tree.points[i][j].Vu_app - VQ_r(tree, tree.r_p) * tree.points[i][j].Vu_app + VQ_r(tree, [i, j]);
+        tree.points[i][j].V_r_t = V * tree.points[i][j].Vu_app - VQ_r_p * tree.points[i][j].Vu_app + VQ_r(tree, [i, j]);
       }
     }
   }
@@ -376,7 +439,7 @@ var modelTick = function(tree) {
     // Calculate electric potential in tree
     updatePointPotentials(tree, V);
 
-    var aPoint = findAvalanchePoint (tree);
+    var aPoint = findAvalanchePoint(tree);
 
     if (aPoint === undefined)
     {

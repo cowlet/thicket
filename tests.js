@@ -215,7 +215,7 @@ test("complex tree calculations", function() {
   deepEqual(closeEnough(tree.calcG(r1, r2), 0.02889, 1e-5), true, "calcG gives "+tree.calcG(r1, r2));
 });
 
-test("VQ_r", function() {
+test("VQ_r with test data", function() {
   expect(9);
 
   var tree = createTree(tree2);
@@ -251,8 +251,8 @@ test("VQ_r", function() {
   tree.points[i][j].Qs.push(-Qd);
   tree.points[i][j+1].Qs.push(Qd);
   // calculated these values
-  deepEqual(closeEnough(VQ_r(tree, r), -522.528, 0.001), true, "VQ_r is "+VQ_r(tree, r));
-  deepEqual(closeEnough(VQ_r(tree, [i, j+1]), 522.528, 0.001), true, "VQ_r opposite end is "+VQ_r(tree, [i, j+1]));
+  deepEqual(closeEnough(VQ_r(tree, r), -522.53, 0.01), true, "VQ_r is "+VQ_r(tree, r));
+  deepEqual(closeEnough(VQ_r(tree, [i, j+1]), 522.53, 0.01), true, "VQ_r opposite end is "+VQ_r(tree, [i, j+1]));
   deepEqual(closeEnough(VQ_r(tree, tree.r_p), -0.002275, 1e-6), true, "VQ_r(pin) is "+VQ_r(tree, tree.r_p));
 
   // now call updatePointPotentials and check
@@ -268,8 +268,7 @@ test("VQ_r", function() {
 });
 
 
-test("VQ_r 2", function() {
-  expect(12);
+test("VQ_r with actual data", function() {
 
   var tree = createTree(tree2);
   var i = 13;
@@ -279,6 +278,13 @@ test("VQ_r 2", function() {
   // check first what Vu_app is
   deepEqual(closeEnough(tree.points[i][j].Vu_app, 0.3255, 0.0001), true, "Vu_app is "+tree.points[i][j].Vu_app);
   deepEqual(closeEnough(tree.points[i][j+1].Vu_app, 0.1565, 0.0001), true, "Vu_app is "+tree.points[i][j+1].Vu_app);
+
+  // check that V at the plane is zero
+  for (var x = 0; x < tree.xmax; ++x)
+  {
+    var V_r_t_plane = tree.Vu_app([x, 15]);
+    deepEqual(V_r_t_plane, 0, "V_r_t at ["+x+",15] is "+V_r_t_plane);
+  }
 
   // initially, all Qs are empty
   deepEqual(VQ_r(tree, r), 0, "initial VQ_r is zero");
@@ -314,6 +320,15 @@ test("VQ_r 2", function() {
 
   //console.log("New V_seg = " + tree.points[i][j].V_r_t + " - " + tree.points[i][j+1].V_r_t + " = " + (tree.points[i][j].V_r_t-tree.points[i][j+1].V_r_t));
   
+  // check that V at the plane is still zero
+  for (var x = 0; x < tree.xmax; ++x)
+  {
+    var Vu_app = tree.Vu_app([x, 15])
+    var V_r_t_plane = V*Vu_app - VQ_r(tree, tree.r_p)*Vu_app + VQ_r(tree, [x,15]);
+    deepEqual(V_r_t_plane, 0, "V_r_t at ["+x+",15] is "+V_r_t_plane);
+  }
+  console.log("Just above zero? " + (V*tree.Vu_app([13,14]) - VQ_r(tree, tree.r_p)*tree.Vu_app([13,14]) + VQ_r(tree, [13,14])));
+
   // test energy calculation
   dissipateEnergy(tree, aPoint, Qd); 
   deepEqual(closeEnough(tree.points[i][j].y_seg.energy, 8.351e-9, 1e-12), true, "energy dissipated is "+tree.points[i][j].y_seg.energy);
@@ -376,9 +391,9 @@ test("model simulation", function() {
 
   // It takes 670 time steps before any V_seg goes high enough
   // And 2093 before a negative V_seg goes above the threshold
-  //for (var a = 0; a < 3; ++a)
+  for (var a = 0; a < 3; ++a)
   //for (var a = 0; a < 670; ++a)
-  for (var a = 0; a < 2093; ++a)
+  //for (var a = 0; a < 2093; ++a)
   {
     console.log(a);
     modelTick(tree);
